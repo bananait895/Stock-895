@@ -101,6 +101,22 @@ body{background:var(--bg);font-family:'Sarabun',sans-serif;color:var(--text);pad
 .sync{display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--muted)}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:#52525B;transition:.3s}
 .abtn-add{background:var(--blue);color:#fff}.abtn-add:hover{background:#2563eb}
+.hist-panel{background:var(--s1);border:1px solid var(--border);border-radius:12px;margin-top:14px;overflow:hidden;display:none}
+.hist-panel.show{display:block}
+.hist-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--s2);border-bottom:1px solid var(--border)}
+.hist-title{font-size:13px;font-weight:600;color:var(--text)}
+.hist-clear{font-size:11px;color:var(--muted);cursor:pointer;background:none;border:none;font-family:'Sarabun',sans-serif;padding:0}
+.hist-clear:hover{color:#EF4444}
+.hist-list{max-height:260px;overflow-y:auto}
+.hist-item{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--b2);font-size:12px}
+.hist-item:last-child{border-bottom:none}
+.hist-type{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.ht-edit{background:rgba(59,130,246,.15);color:#60A5FA}
+.ht-add{background:rgba(34,197,94,.15);color:#22C55E}
+.ht-del{background:rgba(239,68,68,.12);color:#EF4444}
+.hist-name{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist-time{font-size:10px;color:var(--muted);font-family:'IBM Plex Mono',monospace;white-space:nowrap}
+.hist-empty{padding:24px;text-align:center;color:var(--muted);font-size:13px}
 </style>
 </head>
 <body>
@@ -111,7 +127,7 @@ body{background:var(--bg);font-family:'Sarabun',sans-serif;color:var(--text);pad
   </div>
   <div class="sync"><div class="sync-dot" id="syncDot"></div><span id="syncTxt">กำลังเชื่อมต่อ...</span></div>
     <button class="lock-btn" id="lockBtn" onclick="openModal()">🔒 แก้ไขสต็อก</button>
-    <div class="clock" id="clk"></div>
+    <div id="clk" style="text-align:right;line-height:1.3"></div>
 </div>
 
 
@@ -129,6 +145,14 @@ body{background:var(--bg);font-family:'Sarabun',sans-serif;color:var(--text);pad
     <span class="sortable" onclick="doSort('qty')">จำนวน ↕</span>
   </div>
   <div id="list"></div>
+</div>
+
+<div class="hist-panel" id="histPanel">
+  <div class="hist-header">
+    <span class="hist-title">📋 ประวัติการแก้ไข</span>
+    <button class="hist-clear" onclick="clearHistory()">ล้างประวัติ</button>
+  </div>
+  <div class="hist-list" id="histList"><div class="hist-empty">ยังไม่มีประวัติการแก้ไข</div></div>
 </div>
 
 <!-- Password Modal -->
@@ -306,14 +330,9 @@ function render(){
   }).join("");
 }
 
-function tick(){
-  const n=new Date();
-  document.getElementById("clk").textContent=
-    n.toLocaleDateString("th-TH",{year:"numeric",month:"short",day:"numeric"})+" "+
-    n.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"});
-}
-tick(); setInterval(tick,30000);
 render();
+
+// history โหลดหลัง parse — ดูด้านล่าง
 
 function copyName(name) {
   const t = document.getElementById('toast');
@@ -420,6 +439,7 @@ function changeQty(barcode, delta) {
   const hasChanges = Object.keys(changes).length > 0;
   document.getElementById('saveBtn').disabled = !hasChanges;
   document.getElementById('saveInfo').textContent = 'มีการเปลี่ยนแปลง '+Object.keys(changes).length+' รายการ';
+  addHistory('edit', item.name, 'จำนวน → '+newQty);
   render();
   updateKpi();
 }
@@ -464,8 +484,63 @@ function submitAddProduct(){
   document.getElementById('saveBtn').disabled = false;
   document.getElementById('saveInfo').textContent = 'มีการเปลี่ยนแปลง '+Object.keys(changes).length+' รายการ';
   closeAddModal();
+  addHistory('add', name, cat);
   render(); updateKpi(); buildFilters();
   showToast('✅ เพิ่ม '+name+' แล้ว');
+}
+
+let HISTORY = JSON.parse(localStorage.getItem('stock895_hist')||'[]');
+
+// โหลด history ทันทีที่ประกาศตัวแปร (ฟังก์ชันยังไม่พร้อม — เรียกหลัง parse ทั้งหมด)
+document.addEventListener('DOMContentLoaded', function(){
+  if(HISTORY.length){
+    renderHistory();
+    document.getElementById('histPanel').classList.add('show');
+    setLastUpdated(new Date(HISTORY[0].ts));
+  }
+});
+
+function saveHistory(){ try{localStorage.setItem('stock895_hist', JSON.stringify(HISTORY.slice(0,100)));}catch(e){} }
+
+function addHistory(type, name, detail){
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("th-TH",{day:"2-digit",month:"short",year:"numeric"});
+  const timeStr = now.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  HISTORY.unshift({type, name, detail, date: dateStr+' '+timeStr, ts: now.getTime()});
+  saveHistory();
+  renderHistory();
+  setLastUpdated(now);
+  document.getElementById('histPanel').classList.add('show');
+}
+
+function setLastUpdated(d){
+  const dateStr = d.toLocaleDateString("th-TH",{day:"2-digit",month:"short",year:"numeric"});
+  const timeStr = d.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"});
+  document.getElementById('clk').innerHTML =
+    '<div style="font-size:10px;color:var(--muted)">อัพเดทล่าสุด</div>'+
+    '<div style="font-size:13px;font-weight:700;color:#22C55E">'+dateStr+'</div>'+
+    '<div style="font-size:15px;font-weight:700;color:#22C55E;letter-spacing:.5px">'+timeStr+'</div>';
+}
+
+function renderHistory(){
+  const el = document.getElementById('histList');
+  if(!HISTORY.length){el.innerHTML='<div class="hist-empty">ยังไม่มีประวัติการแก้ไข</div>';return;}
+  el.innerHTML = HISTORY.map(h=>{
+    const cls = h.type==='add'?'ht-add':h.type==='del'?'ht-del':'ht-edit';
+    const label = h.type==='add'?'เพิ่ม':h.type==='del'?'ลบ':'แก้ไข';
+    return `<div class="hist-item">
+      <span class="hist-type ${cls}">${label}</span>
+      <span class="hist-name" title="${h.name}">${h.name}${h.detail?' — '+h.detail:''}</span>
+      <span class="hist-time">${h.date}</span>
+    </div>`;
+  }).join('');
+}
+
+function clearHistory(){
+  if(!confirm('ล้างประวัติทั้งหมด?')) return;
+  HISTORY=[];saveHistory();renderHistory();
+  document.getElementById('histPanel').classList.remove('show');
+  document.getElementById('clk').innerHTML='';
 }
 
 function buildFilters() {
