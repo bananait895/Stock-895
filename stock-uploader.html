@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>📥 Stock Uploader · BN895</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<script>
+(function(){
+  window.addEventListener('error', function(e){
+    // Log everything to console for debugging
+    console.error('[ERROR]', e.message || '(empty)', 'at', e.filename || '(no file)', ':', e.lineno || 0, e.error);
+
+    // Skip empty/CORS-masked errors — they're noise we can't act on
+    if(!e.message || e.message === 'Script error.' || e.message === '') return;
+
+    // Skip if app already running fine
+    if(window.__appReady) return;
+    if(document.getElementById('__err')) return;
+
+    var d = document.createElement('div');
+    d.id='__err';
+    d.style.cssText='position:fixed;inset:0;background:#09090D;color:#F4F4F5;font-family:sans-serif;padding:20px;z-index:99999;overflow:auto';
+    var help = location.protocol==='file:'
+      ? '<div style="background:#7C3AED20;border:1px solid #7C3AED;padding:14px;border-radius:8px;margin-top:14px"><b>⚠️ คุณเปิดไฟล์ผ่าน file://</b><br>ใช้ไฟล์นี้ผ่าน GitHub Pages เท่านั้น (https://...)</div>'
+      : '';
+    d.innerHTML = '<div style="max-width:600px;margin:0 auto"><h1 style="color:#EF4444;font-size:18px">⚠️ Error</h1>'+
+      '<div style="background:#16161D;padding:14px;border-radius:8px;font-family:monospace;font-size:12px;color:#EAB308;word-break:break-all">'+
+      escapeHtml(e.message||'')+'<br>at '+escapeHtml(e.filename||'')+':'+(e.lineno||0)+'</div>'+help+
+      '<button onclick="location.reload()" style="background:#7C3AED;color:#fff;border:none;padding:10px 22px;border-radius:8px;margin-top:18px;cursor:pointer">↻ โหลดใหม่</button></div>';
+    document.body.appendChild(d);
+  }, true);
+  window.addEventListener('unhandledrejection', function(e){
+    console.error('[PROMISE]', e.reason);
+  });
+  function escapeHtml(s){return String(s).replace(/[<>&]/g, function(m){return ({'<':'&lt;','>':'&gt;','&':'&amp;'})[m]});}
+})();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous"
+  onerror="console.warn('xlsx from jsdelivr failed, trying cloudflare...');var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.crossOrigin='anonymous';document.head.appendChild(s);"></script>
+
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090D;--s1:#101015;--s2:#16161D;--b2:#1E1E27;
+  --border:#2A2A35;--p:#7C3AED;--p2:#A855F7;
+  --green:#22C55E;--yellow:#EAB308;--red:#EF4444;--blue:#3B82F6;
+  --muted:#52525B;--sub:#71717A;--text:#F4F4F5;
+}
+body{background:var(--bg);font-family:'Sarabun',sans-serif;color:var(--text);
+  padding:20px 16px;min-height:100vh;font-size:14px;line-height:1.5}
+.container{max-width:720px;margin:0 auto}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+.logo{font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px}
+.tagline{font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:3px}
+.mode-switch{background:var(--s1);border:1px solid var(--border);border-radius:12px;
+  padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.mode-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:18px;
+  font-size:12px;font-weight:700;font-family:'IBM Plex Mono',monospace;letter-spacing:.5px}
+.mode-pill.demo{background:rgba(124,58,237,.15);color:#A78BFA;border:1px solid rgba(124,58,237,.4)}
+.mode-pill.live{background:rgba(239,68,68,.15);color:#FCA5A5;border:1px solid rgba(239,68,68,.5)}
+.mode-text{flex:1;font-size:12px;color:var(--sub);min-width:200px}
+.mode-text b{color:var(--text)}
+.mode-btn{background:var(--s2);border:1px solid var(--border);color:var(--text);
+  padding:7px 14px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:.15s}
+.mode-btn:hover{border-color:var(--p)}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px}
+.card.live{border-color:rgba(239,68,68,.4);background:linear-gradient(180deg, rgba(239,68,68,.04), transparent)}
+.card h2{font-size:15px;margin-bottom:5px;display:flex;align-items:center;gap:8px}
+.card .desc{font-size:12px;color:var(--sub);margin-bottom:14px;line-height:1.6}
+.drop{border:2px dashed var(--border);border-radius:12px;padding:32px 18px;text-align:center;
+  background:var(--s2);transition:.2s;cursor:pointer}
+.drop:hover, .drop.over{border-color:var(--p);background:rgba(124,58,237,.08)}
+.drop .ico{font-size:38px;margin-bottom:8px;opacity:.7}
+.drop .t1{font-size:14px;font-weight:600;margin-bottom:3px}
+.drop .t2{font-size:11px;color:var(--muted)}
+.drop input[type=file]{display:none}
+.btn{padding:10px 18px;border-radius:8px;border:none;font-family:'Sarabun',sans-serif;
+  font-size:13px;font-weight:600;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+.btn-p{background:var(--p);color:#fff}.btn-p:hover{background:#6d28d9}
+.btn-g{background:var(--green);color:#fff}.btn-g:hover{background:#16a34a}
+.btn-r{background:var(--red);color:#fff}.btn-r:hover{background:#dc2626}
+.btn-s{background:var(--s2);color:var(--text);border:1px solid var(--border)}
+.btn-s:hover{border-color:var(--p)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:14px}
+.stat{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:10px}
+.stat .v{font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--p2)}
+.stat .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:1px}
+.diff{margin-top:14px;max-height:340px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;background:var(--s2)}
+.diff-empty{padding:24px;text-align:center;color:var(--muted);font-size:12px}
+.diff-row{padding:9px 14px;border-bottom:1px solid var(--b2);display:grid;
+  grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;font-size:12px}
+.diff-row:last-child{border-bottom:none}
+.diff-row.add{background:rgba(34,197,94,.05)}
+.diff-row.rm{background:rgba(239,68,68,.05)}
+.diff-row.chg{background:rgba(234,179,8,.05)}
+.diff-name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.diff-bc{font-family:'IBM Plex Mono',monospace;color:var(--muted);font-size:10px;margin-top:1px}
+.diff-tag{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:700;font-family:'IBM Plex Mono',monospace;letter-spacing:.3px}
+.tag-add{background:rgba(34,197,94,.15);color:var(--green)}
+.tag-rm{background:rgba(239,68,68,.15);color:var(--red)}
+.tag-chg{background:rgba(234,179,8,.15);color:var(--yellow)}
+.diff-qty{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:12px}
+.log{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--sub);max-height:160px;overflow-y:auto;line-height:1.6;margin-top:12px}
+.log .ok{color:var(--green)}.log .err{color:var(--red)}.log .warn{color:var(--yellow)}
+.banner{background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.3);border-radius:10px;
+  padding:11px 14px;font-size:12px;margin-bottom:12px;color:#C4B5FD;line-height:1.55}
+.banner.warn{background:rgba(234,179,8,.08);border-color:rgba(234,179,8,.3);color:#FCD34D}
+.banner.live{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.4);color:#FCA5A5}
+.sync-pill{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--sub);
+  font-family:'IBM Plex Mono',monospace;background:var(--s2);padding:5px 10px;border-radius:18px;border:1px solid var(--border)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9500;display:flex;
+  align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:.2s;padding:20px}
+.modal-ov.show{opacity:1;pointer-events:all}
+.modal{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:26px;width:100%;max-width:340px;text-align:center}
+.modal h3{font-size:17px;margin-bottom:6px}
+.modal p{font-size:12px;color:var(--sub);margin-bottom:16px}
+.modal input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;
+  padding:11px 14px;color:var(--text);font-size:16px;text-align:center;letter-spacing:4px;
+  font-family:'IBM Plex Mono',monospace;outline:none;margin-bottom:8px}
+.modal input:focus{border-color:var(--p)}
+.modal-err{font-size:11px;color:var(--red);min-height:16px;margin-bottom:8px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--p);
+  color:#fff;padding:10px 22px;border-radius:24px;font-size:13px;font-weight:600;
+  opacity:0;pointer-events:none;transition:.25s;z-index:9999;max-width:90vw}
+.toast.show{opacity:1}.toast.err{background:var(--red)}.toast.ok{background:var(--green)}
+.foot{text-align:center;font-size:11px;color:var(--muted);margin-top:20px;
+  font-family:'IBM Plex Mono',monospace;line-height:1.6}
+.foot a{color:var(--sub);text-decoration:none;margin:0 5px}
+.foot a:hover{color:var(--p2)}
+</style>
+</head>
+<body>
+
+<div class="modal-ov show" id="loginModal">
+  <div class="modal">
+    <div style="font-size:30px;margin-bottom:6px">🔐</div>
+    <h3>Admin Login</h3>
+    <p>ใส่รหัสผ่านเพื่อเข้าใช้ Uploader</p>
+    <input type="password" id="pwInput" placeholder="••••••" maxlength="20" onkeydown="if(event.key==='Enter')checkPw()">
+    <div class="modal-err" id="pwErr"></div>
+    <button class="btn btn-p" style="width:100%;justify-content:center" onclick="checkPw()">เข้าสู่ระบบ</button>
+  </div>
+</div>
+
+<div class="container" id="app" style="display:none">
+
+  <div class="head">
+    <div>
+      <div class="logo">🍌 Stock Uploader</div>
+      <div class="tagline">EXCEL → FIREBASE · BN895</div>
+    </div>
+    <div class="sync-pill"><div class="sync-dot" id="syncDot"></div><span id="syncTxt">เชื่อมต่อ...</span></div>
+  </div>
+
+  <div class="mode-switch">
+    <span class="mode-pill demo" id="modePillDemo">🧪 DEMO</span>
+    <span class="mode-pill live" id="modePillLive" style="display:none">🔴 LIVE</span>
+    <div class="mode-text" id="modeText">
+      <b>โหมดทดลอง</b> — ลากไฟล์ Excel มาดูได้ <b>ยังไม่ส่งเข้า Firebase</b>
+    </div>
+    <button class="mode-btn" id="modeBtn" onclick="toggleMode()">สลับเป็น LIVE</button>
+  </div>
+
+  <div class="banner" id="bannerDemo">
+    💡 <strong>เริ่มจากการทดลองก่อน</strong> — ลากไฟล์ Excel ของคุณมาวาง ระบบจะแสดงว่ามีอะไรเปลี่ยนแปลงบ้าง แต่จะไม่บันทึกเข้า Firebase จนกว่าคุณจะกดสลับเป็น LIVE
+  </div>
+  <div class="banner live" id="bannerLive" style="display:none">
+    🔴 <strong>โหมด LIVE</strong> — ข้อมูลจะถูกส่งเข้า Firebase จริงเมื่อกด Sync · ทีมจะเห็นการเปลี่ยนแปลงทันที
+  </div>
+
+  <div class="card" id="uploadCard">
+    <h2>📥 อัปโหลด Stock.xlsx</h2>
+    <div class="desc">
+      ลากไฟล์ Excel ที่ Export จากระบบ ITEC มาวาง<br>
+      ระบบจะอ่านทุก Sheet (iPhone / iPad / Apple Watch / Smartphone / Tablet / Notebook) และเทียบกับ Firebase
+    </div>
+
+    <label class="drop" id="dropZone">
+      <input type="file" id="fileInput" accept=".xlsx,.xls">
+      <div class="ico">📊</div>
+      <div class="t1" id="dropTitle">ลากไฟล์มาวาง หรือคลิกเพื่อเลือก</div>
+      <div class="t2" id="dropSub">รองรับ Stock_*.xlsx</div>
+    </label>
+
+    <div id="statsBox" style="display:none">
+      <div class="stats">
+        <div class="stat"><div class="v" id="stTotal">0</div><div class="l">ทั้งหมด</div></div>
+        <div class="stat"><div class="v" id="stAdd" style="color:var(--green)">0</div><div class="l">+ ใหม่</div></div>
+        <div class="stat"><div class="v" id="stChg" style="color:var(--yellow)">0</div><div class="l">~ แก้</div></div>
+        <div class="stat"><div class="v" id="stRm" style="color:var(--red)">0</div><div class="l">- หาย</div></div>
+      </div>
+
+      <div class="banner warn" id="warnBox" style="display:none;margin-top:12px;margin-bottom:0">
+        ⚠️ มีรายการที่อยู่ใน Firebase แต่ไม่มีในไฟล์ Excel ใหม่ — เลือกว่าจะลบทิ้งหรือเก็บไว้
+      </div>
+
+      <div class="diff" id="diffList"></div>
+
+      <div class="actions">
+        <button class="btn btn-g" id="syncBtn" onclick="doSync(false)">☁️ Sync เข้า Firebase</button>
+        <button class="btn btn-r" id="syncBtnReplace" onclick="doSync(true)" style="display:none">🗑️ Sync + ลบของหาย</button>
+        <button class="btn btn-s" onclick="resetAll()">↻ ยกเลิก</button>
+      </div>
+    </div>
+
+    <div class="log" id="logBox" style="display:none"></div>
+  </div>
+
+  <div class="card">
+    <h2>⚡ Quick Actions</h2>
+    <div class="actions">
+      <a href="./" class="btn btn-s">🏠 หน้าหลัก</a>
+      <button class="btn btn-s" onclick="exportSnapshot()">💾 Export Snapshot</button>
+      <button class="btn btn-s" onclick="viewFirebaseInfo()">🔍 ดูข้อมูล Firebase</button>
+    </div>
+  </div>
+
+  <div class="foot">
+    Stock 895 Tools · Demo Mode ปลอดภัย ไม่กระทบข้อมูลจริง<br>
+    <a href="https://console.firebase.google.com/u/0/project/stock-bn895/database" target="_blank">Firebase Console</a> ·
+    <a href="https://github.com/bananait895/Stock-895" target="_blank">GitHub Repo</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, update, get, onValue }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const app = initializeApp({
+  apiKey:"AIzaSyDQjAT16bVpcyUQFyjlQ5Fx9UKyN4wZk5E",
+  authDomain:"stock-bn895.firebaseapp.com",
+  databaseURL:"https://stock-bn895-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"stock-bn895",
+  storageBucket:"stock-bn895.firebasestorage.app",
+  messagingSenderId:"468062725168",
+  appId:"1:468062725168:web:2206f3cafcf955f9fb39f5"
+});
+const db = getDatabase(app);
+
+window.__appReady = true;
+
+onValue(ref(db, '.info/connected'), (snap)=>{
+  const dot = document.getElementById('syncDot');
+  const txt = document.getElementById('syncTxt');
+  if(snap.val()===true){ dot.style.background='#22C55E'; txt.textContent='เชื่อมต่อแล้ว'; }
+  else { dot.style.background='#EF4444'; txt.textContent='Offline'; }
+});
+
+const ADMIN_PW = "895895";
+
+window.checkPw = ()=>{
+  const v = document.getElementById('pwInput').value.trim();
+  if(v === ADMIN_PW){
+    document.getElementById('loginModal').classList.remove('show');
+    document.getElementById('app').style.display='block';
+    sessionStorage.setItem('uploaderAuth','1');
+  } else {
+    document.getElementById('pwErr').textContent = '❌ รหัสไม่ถูกต้อง';
+    document.getElementById('pwInput').value='';
+  }
+};
+if(sessionStorage.getItem('uploaderAuth')==='1'){
+  document.getElementById('loginModal').classList.remove('show');
+  document.getElementById('app').style.display='block';
+}
+setTimeout(()=>document.getElementById('pwInput')?.focus(), 100);
+
+let parsedData = null;
+let currentFb = null;
+let currentMeta = null;
+let isDemoMode = true;
+
+const toast = (msg, type='')=>{
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(()=>t.classList.remove('show'), 2600);
+};
+
+const log = (msg, type='')=>{
+  const box = document.getElementById('logBox');
+  box.style.display='block';
+  const line = document.createElement('div');
+  line.className = type;
+  const now = new Date().toLocaleTimeString('th-TH');
+  line.textContent = `[${now}] ${msg}`;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+};
+
+window.toggleMode = ()=>{
+  if(isDemoMode){
+    if(!confirm('⚠️ สลับเป็น LIVE MODE\n\nต่อจากนี้ ทุกการ Sync จะส่งข้อมูลเข้า Firebase จริง\nทีมจะเห็นการเปลี่ยนแปลงทันที\n\nยืนยันสลับ?')) return;
+    isDemoMode = false;
+  } else {
+    isDemoMode = true;
+  }
+  updateModeUI();
+};
+
+function updateModeUI(){
+  document.getElementById('modePillDemo').style.display = isDemoMode ? 'inline-flex' : 'none';
+  document.getElementById('modePillLive').style.display = isDemoMode ? 'none' : 'inline-flex';
+  document.getElementById('bannerDemo').style.display = isDemoMode ? 'block' : 'none';
+  document.getElementById('bannerLive').style.display = isDemoMode ? 'none' : 'block';
+  document.getElementById('modeBtn').textContent = isDemoMode ? 'สลับเป็น LIVE' : '← กลับ DEMO';
+  document.getElementById('uploadCard').classList.toggle('live', !isDemoMode);
+  document.getElementById('modeText').innerHTML = isDemoMode
+    ? '<b>โหมดทดลอง</b> — ลากไฟล์ Excel มาดูได้ <b>ยังไม่ส่งเข้า Firebase</b>'
+    : '<b style="color:#FCA5A5">โหมด LIVE</b> — ข้อมูลจะอัปเดต Firebase จริงทันทีที่กด Sync';
+  const sb = document.getElementById('syncBtn');
+  if(sb){
+    sb.className = isDemoMode ? 'btn btn-p' : 'btn btn-g';
+    sb.innerHTML = isDemoMode ? '🧪 ดูผลลัพธ์ (Demo)' : '☁️ Sync เข้า Firebase (LIVE)';
+  }
+}
+
+function parseExcel(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      try{
+        if(typeof XLSX === 'undefined'){
+          reject(new Error('XLSX library ยังไม่โหลด ลอง refresh'));
+          return;
+        }
+        const wb = XLSX.read(e.target.result, {type:'binary'});
+        const items = [];
+        const catMap = {
+          'iphone':'iPhone', 'ipad':'iPad', 'apple watch':'Apple Watch',
+          'smart phone':'Smartphone', 'smartphone':'Smartphone',
+          'tablet':'Tablet', 'notebook':'Notebook'
+        };
+        wb.SheetNames.forEach(sn=>{
+          const key = sn.toLowerCase().replace(/\s+/g,' ').trim();
+          let category = '';
+          for(const k of Object.keys(catMap)){
+            if(key.startsWith(k)){ category = catMap[k]; break; }
+          }
+          const sheet = wb.Sheets[sn];
+          const rows = XLSX.utils.sheet_to_json(sheet, {defval:''});
+          rows.forEach(r=>{
+            const barcode = String(r.Product || r.product || r['Product No.'] || '').trim();
+            const name    = String(r.Name || r.name || '').trim();
+            const qty     = parseInt(r.Number || r.number || r.Qty || r.qty || 0) || 0;
+            const price   = parseInt(r['Set Price'] || r.set_price || r['Min Price'] || r.Price || 0) || 0;
+            const brand   = String(r.Brand || r.brand || '').trim();
+            const model   = String(r.Model || r.model || '').trim();
+            const color   = String(r.Color || r.color || '').trim();
+            if(barcode && name){
+              items.push({barcode, name, qty, set_price:price, brand, model, color, category});
+            }
+          });
+        });
+        resolve(items);
+      } catch(err){ reject(err); }
+    };
+    reader.onerror = ()=>reject(new Error('อ่านไฟล์ไม่ได้'));
+    reader.readAsBinaryString(file);
+  });
+}
+
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+['dragenter','dragover'].forEach(ev=>{
+  dropZone.addEventListener(ev, e=>{ e.preventDefault(); dropZone.classList.add('over'); });
+});
+['dragleave','drop'].forEach(ev=>{
+  dropZone.addEventListener(ev, e=>{ e.preventDefault(); dropZone.classList.remove('over'); });
+});
+dropZone.addEventListener('drop', e=>{
+  const f = e.dataTransfer.files?.[0];
+  if(f) handleFile(f);
+});
+fileInput.addEventListener('change', e=>{
+  const f = e.target.files?.[0];
+  if(f) handleFile(f);
+});
+
+async function handleFile(file){
+  document.getElementById('logBox').innerHTML='';
+  document.getElementById('logBox').style.display='block';
+  log(`📂 อ่านไฟล์: ${file.name} (${(file.size/1024).toFixed(1)} KB)`);
+  document.getElementById('dropTitle').textContent = '⏳ กำลังประมวลผล...';
+
+  try{
+    parsedData = await parseExcel(file);
+    log(`✓ พบสินค้า ${parsedData.length} รายการ`, 'ok');
+    document.getElementById('dropTitle').textContent = `✓ ${file.name}`;
+    document.getElementById('dropSub').textContent = `${parsedData.length} รายการพร้อม sync`;
+
+    log(`☁️ ดึงข้อมูลปัจจุบันจาก Firebase...`);
+    const snap = await get(ref(db, 'stock'));
+    currentFb = snap.val() || {};
+    log(`✓ Firebase มี ${Object.keys(currentFb).length} barcode`, 'ok');
+
+    const metaSnap = await get(ref(db, 'products'));
+    currentMeta = metaSnap.val() || {};
+    log(`✓ Firebase มี metadata ${Object.keys(currentMeta).length} รายการ`);
+
+    computeDiff();
+    document.getElementById('statsBox').style.display='block';
+    updateModeUI();
+  } catch(err){
+    log(`✗ ผิดพลาด: ${err.message}`, 'err');
+    toast('อ่านไฟล์ไม่สำเร็จ: ' + err.message, 'err');
+    document.getElementById('dropTitle').textContent = 'ลากไฟล์มาวาง หรือคลิกเพื่อเลือก';
+  }
+}
+
+function computeDiff(){
+  const newBarcodes = new Set(parsedData.map(d=>d.barcode));
+  const oldBarcodes = new Set(Object.keys(currentFb));
+
+  let added=[], removed=[], changed=[];
+
+  parsedData.forEach(d=>{
+    if(!oldBarcodes.has(d.barcode)){
+      added.push(d);
+    } else {
+      const oldQty = currentFb[d.barcode];
+      if(oldQty !== d.qty){
+        changed.push({...d, oldQty});
+      }
+    }
+  });
+
+  oldBarcodes.forEach(b=>{
+    if(!newBarcodes.has(b)){
+      const meta = currentMeta[b] || {};
+      removed.push({barcode:b, qty:currentFb[b], name:meta.name||'(ไม่มีข้อมูล)'});
+    }
+  });
+
+  document.getElementById('stTotal').textContent = parsedData.length;
+  document.getElementById('stAdd').textContent = added.length;
+  document.getElementById('stChg').textContent = changed.length;
+  document.getElementById('stRm').textContent = removed.length;
+  document.getElementById('warnBox').style.display = removed.length>0 ? 'block' : 'none';
+  document.getElementById('syncBtnReplace').style.display = removed.length>0 ? 'inline-flex' : 'none';
+
+  const diffEl = document.getElementById('diffList');
+  if(added.length===0 && changed.length===0 && removed.length===0){
+    diffEl.innerHTML = '<div class="diff-empty">✨ ทุกอย่างตรงกัน ไม่มีอะไรต้อง sync</div>';
+    document.getElementById('syncBtn').disabled = true;
+    return;
+  }
+  document.getElementById('syncBtn').disabled = false;
+
+  let html = '';
+  added.slice(0,300).forEach(d=>{
+    html += `<div class="diff-row add">
+      <div><div class="diff-name">${escape(d.name)}</div><div class="diff-bc">${d.barcode}</div></div>
+      <div class="diff-tag tag-add">NEW</div>
+      <div class="diff-qty" style="color:var(--green)">+${d.qty}</div>
+      <div></div>
+    </div>`;
+  });
+  changed.slice(0,300).forEach(d=>{
+    const delta = d.qty - d.oldQty;
+    const sign = delta>0?'+':'';
+    html += `<div class="diff-row chg">
+      <div><div class="diff-name">${escape(d.name)}</div><div class="diff-bc">${d.barcode}</div></div>
+      <div class="diff-tag tag-chg">UPDATE</div>
+      <div class="diff-qty" style="color:var(--muted)">${d.oldQty} →</div>
+      <div class="diff-qty" style="color:${delta>=0?'var(--green)':'var(--red)'}">${d.qty} (${sign}${delta})</div>
+    </div>`;
+  });
+  removed.slice(0,300).forEach(d=>{
+    html += `<div class="diff-row rm">
+      <div><div class="diff-name">${escape(d.name)}</div><div class="diff-bc">${d.barcode}</div></div>
+      <div class="diff-tag tag-rm">MISSING</div>
+      <div class="diff-qty" style="color:var(--red)">${d.qty}</div>
+      <div></div>
+    </div>`;
+  });
+  if(added.length+changed.length+removed.length > 900){
+    html += `<div class="diff-empty">...และอีก ${added.length+changed.length+removed.length-900} รายการ</div>`;
+  }
+  diffEl.innerHTML = html;
+
+  window._diff = {added, changed, removed};
+}
+
+function escape(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+window.doSync = async function(deleteRemoved){
+  if(!parsedData){ toast('ยังไม่มีข้อมูล', 'err'); return; }
+
+  if(isDemoMode){
+    log(`🧪 DEMO MODE: ไม่ส่งข้อมูลจริง`, 'warn');
+    const a = window._diff?.added.length || 0;
+    const c = window._diff?.changed.length || 0;
+    const r = deleteRemoved ? (window._diff?.removed.length || 0) : 0;
+    log(`📊 ถ้าเป็น LIVE จะ: เพิ่ม ${a} · แก้ ${c} · ลบ ${r}`, 'warn');
+    toast(`🧪 Demo: ดูผลแล้ว ไม่เปลี่ยน Firebase`, 'ok');
+    return;
+  }
+
+  if(!confirm(deleteRemoved
+    ? `🔴 LIVE: ยืนยัน Sync และลบรายการที่หายไป ${window._diff.removed.length} รายการ?`
+    : `🔴 LIVE: ยืนยัน Sync ${parsedData.length} รายการเข้า Firebase?`)) return;
+
+  document.getElementById('syncBtn').disabled = true;
+  document.getElementById('syncBtnReplace').disabled = true;
+  log(`☁️ เริ่ม sync เข้า Firebase (LIVE)...`);
+
+  try{
+    const stockUpdate = {};
+    parsedData.forEach(d=>{ stockUpdate[d.barcode] = d.qty; });
+
+    const productsUpdate = {};
+    parsedData.forEach(d=>{
+      productsUpdate[d.barcode] = {
+        name: d.name, set_price: d.set_price,
+        brand: d.brand, model: d.model,
+        color: d.color, category: d.category
+      };
+    });
+
+    if(deleteRemoved && window._diff?.removed){
+      window._diff.removed.forEach(d=>{
+        stockUpdate[d.barcode] = null;
+        productsUpdate[d.barcode] = null;
+      });
+    }
+
+    await update(ref(db,'stock'), stockUpdate);
+    log(`✓ อัปเดต stock เรียบร้อย`, 'ok');
+    await update(ref(db,'products'), productsUpdate);
+    log(`✓ อัปเดต products เรียบร้อย`, 'ok');
+
+    const evtKey = 'sync_' + Date.now();
+    await set(ref(db, `sync_log/${evtKey}`), {
+      at: new Date().toISOString(),
+      added: window._diff?.added.length || 0,
+      changed: window._diff?.changed.length || 0,
+      removed: deleteRemoved ? (window._diff?.removed.length || 0) : 0,
+      total: parsedData.length
+    });
+    log(`✓ บันทึกประวัติ sync แล้ว`, 'ok');
+
+    toast('🎉 Sync เข้า Firebase สำเร็จ!', 'ok');
+    setTimeout(resetAll, 1800);
+  } catch(err){
+    log(`✗ Sync ล้มเหลว: ${err.message}`, 'err');
+    toast('Sync ล้มเหลว: ' + err.message, 'err');
+    document.getElementById('syncBtn').disabled = false;
+    document.getElementById('syncBtnReplace').disabled = false;
+  }
+};
+
+window.resetAll = function(){
+  parsedData = null;
+  currentFb = null;
+  currentMeta = null;
+  window._diff = null;
+  document.getElementById('statsBox').style.display='none';
+  document.getElementById('logBox').style.display='none';
+  document.getElementById('logBox').innerHTML='';
+  document.getElementById('dropTitle').textContent = 'ลากไฟล์มาวาง หรือคลิกเพื่อเลือก';
+  document.getElementById('dropSub').textContent = 'รองรับ Stock_*.xlsx';
+  document.getElementById('fileInput').value = '';
+  updateModeUI();
+};
+
+window.exportSnapshot = async function(){
+  try{
+    toast('💾 กำลัง export...', '');
+    const [stockSnap, productsSnap] = await Promise.all([
+      get(ref(db,'stock')),
+      get(ref(db,'products'))
+    ]);
+    const snapshot = {
+      exported_at: new Date().toISOString(),
+      stock: stockSnap.val() || {},
+      products: productsSnap.val() || {}
+    };
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const ts = new Date().toISOString().slice(0,16).replace(/[:T]/g,'-');
+    a.download = `stock895-snapshot-${ts}.json`;
+    a.click();
+    toast('💾 Export สำเร็จ', 'ok');
+  } catch(err){
+    toast('Export ล้มเหลว: ' + err.message, 'err');
+  }
+};
+
+window.viewFirebaseInfo = async function(){
+  try{
+    const [stockSnap, productsSnap, logsSnap] = await Promise.all([
+      get(ref(db,'stock')),
+      get(ref(db,'products')),
+      get(ref(db,'sync_log'))
+    ]);
+    const stock = stockSnap.val() || {};
+    const products = productsSnap.val() || {};
+    const logs = logsSnap.val() || {};
+    const stockCount = Object.keys(stock).length;
+    const productsCount = Object.keys(products).length;
+    const totalQty = Object.values(stock).reduce((a,b)=>a+(b||0), 0);
+    const logsCount = Object.keys(logs).length;
+    alert(
+      `📊 ข้อมูลใน Firebase ตอนนี้:\n\n` +
+      `• stock/ (จำนวน): ${stockCount} barcode\n` +
+      `• products/ (metadata): ${productsCount} รายการ\n` +
+      `• sync_log/ (ประวัติ): ${logsCount} ครั้ง\n` +
+      `• จำนวนรวม: ${totalQty} ชิ้น\n\n` +
+      `${productsCount === 0 ? '⚠️ ยังไม่มี metadata — ครั้งแรกที่ sync จะสร้างขึ้น' : '✓ มี metadata ครบ'}`
+    );
+  } catch(err){
+    toast('โหลดไม่ได้: ' + err.message, 'err');
+  }
+};
+
+updateModeUI();
+</script>
+
+</body>
+</html>
