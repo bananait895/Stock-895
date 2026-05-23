@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Stock 895</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous"
+  onerror="var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.crossOrigin='anonymous';document.head.appendChild(s);"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js" crossorigin="anonymous"
+  onerror="var s=document.createElement('script');s.src='https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';s.crossOrigin='anonymous';document.head.appendChild(s);"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090D;--s1:#101015;--s2:#16161D;--b2:#1E1E27;
+  --border:#2A2A35;--p:#7C3AED;--p2:#A855F7;
+  --green:#22C55E;--yellow:#EAB308;--blue:#3B82F6;
+  --muted:#52525B;--sub:#71717A;--text:#F4F4F5;
+}
+body{background:var(--bg);font-family:'Sarabun',sans-serif;color:var(--text);padding:18px 20px;font-size:14px}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:11px}
+.brand-logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#FFD93B,#F5A623);
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+  box-shadow:0 4px 14px rgba(245,166,35,.35);flex-shrink:0}
+.logo{font-size:19px;font-weight:700;color:#fff;letter-spacing:.3px;line-height:1}
+.logo-num{color:#FFD93B}
+.status-line{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:10px;
+  color:var(--sub,#71717A);font-family:'IBM Plex Mono',monospace}
+.status-sep{opacity:.5}
+.clock{font-size:10px;color:var(--sub,#71717A);font-family:'IBM Plex Mono',monospace}
+.lock-btn{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#FFD93B,#F5A623);
+  color:#1a1500;border:none;padding:10px 18px;border-radius:11px;font-size:13px;font-weight:700;
+  cursor:pointer;font-family:'Sarabun',sans-serif;box-shadow:0 3px 12px rgba(245,166,35,.3);transition:.15s}
+.lock-btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.lock-btn:active{transform:scale(.97)}
+
+.ctrl{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.search{flex:1;min-width:180px;background:#141417;border:1px solid #232328;border-radius:12px;
+  padding:12px 14px;color:var(--text);font-family:'Sarabun',sans-serif;font-size:14px;outline:none;transition:.15s}
+.search:focus{border-color:#F5A623;box-shadow:0 0 0 3px rgba(245,166,35,.12)}
+.search::placeholder{color:var(--muted)}
+.frow{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px}
+.bf{background:#141417;border:1px solid #232328;border-radius:11px;
+  padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;color:#A1A1AA;
+  transition:.15s;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.bf:hover{border-color:#F5A623;color:var(--text)}
+.bf.on{background:linear-gradient(135deg,#FFD93B,#F5A623);border-color:#F5A623;color:#1a1500;font-weight:700}
+.bf .bn{font-size:10px;font-family:'IBM Plex Mono',monospace;font-weight:500;
+  color:#52525B;line-height:1}
+.bf.on .bn{background:rgba(0,0,0,.2);color:#1a1500;padding:1px 7px;border-radius:7px}
+.rbar{font-size:11px;color:var(--muted);margin-bottom:8px;font-family:'IBM Plex Mono',monospace}
+.wrap{background:var(--s1);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.thead{display:grid;grid-template-columns:28px 1fr 72px;
+  background:var(--s2);padding:8px 14px;border-bottom:1px solid var(--border);gap:8px}
+.thead span{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;text-align:center}
+.thead span:nth-child(2){text-align:left}
+.sortable{cursor:pointer}.sortable:hover{color:var(--text)}
+/* ── Option C: การ์ดจัดกลุ่มตามรุ่น ── */
+#list{display:flex;flex-direction:column;gap:8px;padding:4px}
+.mcard{background:var(--s1,#101015);border:1px solid var(--b2,#1E1E27);border-radius:12px;padding:12px;transition:.15s}
+.mcard.low{border-color:rgba(234,179,8,.3)}
+.mhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+.minfo{min-width:0;flex:1}
+.mname{font-size:14px;font-weight:600;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msub{font-size:10px;color:var(--sub,#71717A);font-family:'IBM Plex Mono',monospace;margin-top:2px}
+.mtotal{padding:4px 11px;border-radius:14px;font-size:12px;font-family:'IBM Plex Mono',monospace;font-weight:700;flex-shrink:0;white-space:nowrap}
+.total-ok{background:rgba(34,197,94,.12);color:#22C55E}
+.total-low{background:rgba(234,179,8,.12);color:#EAB308}
+.total-zero{background:rgba(239,68,68,.12);color:#EF4444}
+.crow{display:flex;gap:7px;flex-wrap:wrap}
+@media (max-width:480px){
+  .crow{gap:8px}
+  .cchip-link{padding:8px 5px 8px 8px;gap:8px;min-height:42px}
+  .cdot{width:22px;height:22px}
+  .cname{font-size:13px}
+  .cqty-btn{min-width:46px;min-height:42px;font-size:14px;padding:0 13px}
+  .mname{font-size:15px}
+  .mcard{padding:13px}
+}
+
+/* chip สี (โหมดดู) — กดสี+ชื่อ=Google, กดจำนวน=คัดลอก */
+.cchip{display:inline-flex;align-items:stretch;background:var(--s2,#16161D);border:1px solid var(--b2,#1E1E27);
+  border-radius:16px;overflow:hidden;transition:.15s}
+.cchip.zero{opacity:.4}
+.cchip.changed{outline:2px solid var(--p,#7C3AED);outline-offset:1px}
+.cchip-link{display:inline-flex;align-items:center;gap:7px;padding:7px 4px 7px 7px;text-decoration:none;
+  color:inherit;cursor:pointer;transition:.12s;min-height:38px}
+.cchip-link:hover{background:rgba(124,58,237,.15)}
+.cchip-link:active{background:rgba(124,58,237,.28)}
+.cdot{width:20px;height:20px;border-radius:50%;border:1px solid rgba(255,255,255,.15);flex-shrink:0;transition:.15s}
+.cchip-link:hover .cdot{transform:scale(1.12)}
+.cname{font-size:12px;font-weight:500;white-space:nowrap}
+.cqty-btn{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;cursor:pointer;
+  border:none;border-left:1px solid var(--b2,#1E1E27);background:transparent;
+  padding:0 12px;min-width:42px;min-height:38px;transition:.12s}
+.cqty-btn:hover{background:rgba(124,58,237,.18)}
+.cqty-btn:active{transform:scale(.92);background:rgba(124,58,237,.32)}
+.cqty-btn.ok{color:#22C55E}.cqty-btn.low{color:#EAB308}.cqty-btn.zero{color:var(--muted,#52525B)}
+
+/* จุดสีในโหมด admin (ยังใช้คลิกดู Google) */
+.cdot-link{display:flex;align-items:center;flex-shrink:0}
+.cdot-link:hover .cdot{transform:scale(1.15)}
+.empty{padding:40px;text-align:center;color:var(--muted);font-size:13px}
+
+/* ========== ADMIN PANEL (หน้าแก้ไข) ========== */
+.admin-panel{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:12px;padding:8px 4px}
+.admin-card{display:flex;align-items:center;gap:14px;background:var(--s1,#101015);
+  border:1px solid var(--border,#2A2A35);border-radius:14px;padding:18px;cursor:pointer;
+  text-align:left;font-family:inherit;color:var(--text);transition:.15s;width:100%}
+.admin-card:active{transform:scale(.98)}
+.admin-card.excel{border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.06)}
+.admin-card.excel:hover{background:rgba(34,197,94,.12)}
+.admin-scan-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.admin-card.scan-add{flex-direction:column;gap:6px;text-align:center;padding:22px 12px;
+  border-color:rgba(59,130,246,.4);background:rgba(59,130,246,.06)}
+.admin-card.scan-add:hover{background:rgba(59,130,246,.12)}
+.admin-card.scan-del{flex-direction:column;gap:6px;text-align:center;padding:22px 12px;
+  border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.06)}
+.admin-card.scan-del:hover{background:rgba(239,68,68,.12)}
+.ac-ico{font-size:30px;line-height:1;flex-shrink:0}
+.ac-title{font-size:16px;font-weight:700}
+.ac-sub{font-size:11px;color:var(--sub,#71717A);margin-top:2px}
+
+.admin-changes{background:var(--s1,#101015);border:1px solid var(--border,#2A2A35);border-radius:14px;overflow:hidden}
+.ach-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;
+  border-bottom:1px solid var(--b2,#1E1E27);font-size:13px;font-weight:600}
+.ach-count{background:var(--p,#7C3AED);color:#fff;font-size:11px;font-family:'IBM Plex Mono',monospace;
+  padding:2px 9px;border-radius:10px;min-width:24px;text-align:center}
+.ach-list{max-height:280px;overflow-y:auto;padding:6px}
+.ach-empty{padding:30px 16px;text-align:center;color:var(--muted,#52525B);font-size:12px}
+.ach-item{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:9px 12px;border-radius:9px;font-size:12px;animation:achIn .25s ease}
+.ach-item:nth-child(odd){background:rgba(255,255,255,.02)}
+@keyframes achIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+.ach-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.ach-delta{font-family:'IBM Plex Mono',monospace;font-weight:700;white-space:nowrap;font-size:12px}
+.ach-delta.up{color:#22C55E}.ach-delta.down{color:#EF4444}
+.ach-new{color:#3B82F6;font-size:9px;background:rgba(59,130,246,.15);padding:1px 6px;border-radius:6px;margin-left:4px}
+
+.admin-save{background:#22C55E;color:#fff;border:none;border-radius:14px;padding:16px;
+  font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;transition:.15s;
+  position:sticky;bottom:8px}
+.admin-save:hover:not(:disabled){background:#16a34a}
+.admin-save:active:not(:disabled){transform:scale(.98)}
+.admin-save:disabled{opacity:.4;cursor:not-allowed}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  background:var(--p);color:#fff;padding:9px 20px;border-radius:20px;
+  font-size:13px;font-weight:600;opacity:0;pointer-events:none;
+  transition:opacity .25s;z-index:9999;max-width:80vw;text-align:center}
+.toast.show{opacity:1}
+
+/* ── Firebase / Admin additions ── */
+.edit-bar{display:none;position:sticky;bottom:0;background:var(--s2);border-top:1px solid var(--border);
+  padding:12px 20px;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;z-index:50}
+.edit-bar.show{display:flex}
+.abtn{padding:9px 20px;border-radius:8px;border:none;font-family:'Sarabun',sans-serif;
+  font-size:14px;font-weight:600;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:6px}
+.abtn-save{background:#22C55E;color:#fff}.abtn-save:hover{background:#16a34a}
+.abtn-save:disabled{opacity:.5;cursor:not-allowed}
+.abtn-logout{background:var(--s1);color:var(--sub);border:1px solid var(--border)}
+.abtn-logout:hover{color:#EF4444;border-color:#EF4444}
+.save-info{font-size:12px;color:var(--muted);font-family:'IBM Plex Mono',monospace}
+.lock-btn{font-size:11px;font-family:'IBM Plex Mono',monospace;padding:4px 12px;border-radius:20px;
+  border:1px solid var(--border);background:var(--s2);color:var(--muted);cursor:pointer;transition:.15s}
+.lock-btn:hover{border-color:var(--p);color:var(--text)}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;display:flex;align-items:center;
+  justify-content:center;opacity:0;pointer-events:none;transition:.2s}
+.overlay.show{opacity:1;pointer-events:all}
+.modal{background:var(--s2);border:1px solid var(--border);border-radius:16px;padding:28px 24px;width:300px;text-align:center}
+.modal h2{font-size:18px;margin-bottom:6px}
+.modal p{font-size:13px;color:var(--muted);margin-bottom:18px}
+.modal input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;color:var(--text);font-size:16px;text-align:center;letter-spacing:4px;
+  font-family:'IBM Plex Mono',monospace;outline:none;margin-bottom:10px}
+.modal input:focus{border-color:var(--p)}
+.modal-err{font-size:12px;color:#EF4444;margin-bottom:10px;min-height:16px}
+.mbtn{width:100%;padding:10px;border-radius:8px;border:none;font-family:'Sarabun',sans-serif;
+  font-size:14px;font-weight:600;cursor:pointer;transition:.15s;margin-top:4px}
+.mbtn-p{background:var(--p);color:#fff}.mbtn-p:hover{background:#6d28d9}
+.mbtn-g{background:var(--s1);color:var(--sub);border:1px solid var(--border)}.mbtn-g:hover{color:var(--text)}
+.changed{outline:1px solid #EAB308}
+.sync{display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--muted)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#52525B;transition:.3s}
+.abtn-add{background:var(--blue);color:#fff}.abtn-add:hover{background:#2563eb}
+.abtn-del{background:#EF4444;color:#fff}.abtn-del:hover{background:#dc2626}
+.ap-preview{background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.25);border-radius:10px;padding:10px 12px}
+
+/* Scanner Modal */
+.scan-modal{max-width:380px}
+.scan-wrap{position:relative;width:100%;border-radius:12px;overflow:hidden;background:#000;min-height:200px}
+#scanReader{width:100%;border-radius:12px;overflow:hidden;background:#000;min-height:200px}
+#scanReader video{border-radius:12px;display:block;width:100%!important}
+#scanReader img[alt="Info icon"],#scanReader{position:relative}
+#qr-shaded-region{display:none!important}
+#scanReader > div{border:none!important}
+
+/* กรอบเล็ง + มุม */
+.scan-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:75%;max-width:260px;height:140px;pointer-events:none;z-index:5}
+.scan-corner{position:absolute;width:24px;height:24px;border:3px solid #22C55E}
+.scan-corner.tl{top:0;left:0;border-right:none;border-bottom:none;border-radius:6px 0 0 0}
+.scan-corner.tr{top:0;right:0;border-left:none;border-bottom:none;border-radius:0 6px 0 0}
+.scan-corner.bl{bottom:0;left:0;border-right:none;border-top:none;border-radius:0 0 0 6px}
+.scan-corner.br{bottom:0;right:0;border-left:none;border-top:none;border-radius:0 0 6px 0}
+/* เส้นเล็งสีแดง อยู่นิ่งกลางกรอบ */
+.scan-line{position:absolute;left:6px;right:6px;height:2px;background:#EF4444;
+  box-shadow:0 0 8px 1px rgba(239,68,68,.9);border-radius:2px;top:50%;transform:translateY(-50%)}
+
+/* แถบซูม x1/x2/x3 */
+.zoom-bar{display:flex;align-items:center;gap:8px;margin-top:10px;justify-content:center;
+  background:var(--s2);border:1px solid var(--b2);border-radius:10px;padding:8px 12px}
+.zoom-label{font-size:12px;color:var(--sub);margin-right:4px}
+.zoom-x{min-width:48px;height:36px;border:1px solid var(--border);border-radius:8px;background:var(--s1);
+  color:var(--text);font-size:14px;font-weight:700;font-family:'IBM Plex Mono',monospace;cursor:pointer;transition:.12s}
+.zoom-x:active{transform:scale(.94)}
+.zoom-x.on{background:var(--p);border-color:var(--p);color:#fff}
+
+.scan-status{text-align:center;font-size:12px;color:var(--sub);font-family:'IBM Plex Mono',monospace;
+  margin-top:10px;min-height:18px;transition:.2s}
+.scan-status.found{color:#22C55E;font-weight:600;font-size:14px}
+.scan-status.err{color:#EF4444}
+.scan-recent{margin-top:10px;max-height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:5px}
+.scan-rec-item{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:7px 11px;font-size:12px;
+  animation:recIn .3s ease}
+@keyframes recIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.scan-rec-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.scan-rec-delta{font-family:'IBM Plex Mono',monospace;font-weight:700;white-space:nowrap}
+.scan-rec-delta.up{color:#22C55E}
+.scan-rec-delta.down{color:#EF4444}
+.abtn-excel{background:#16A34A;color:#fff}.abtn-excel:hover{background:#15803d}
+
+/* Excel Modal */
+.excel-modal{max-width:480px;text-align:left;max-height:88vh;overflow-y:auto}
+.ex-drop{display:block;border:2px dashed var(--border,#2A2A35);border-radius:12px;padding:26px 16px;
+  text-align:center;background:rgba(255,255,255,.02);cursor:pointer;transition:.2s;margin-bottom:12px}
+.ex-drop:hover,.ex-drop.over{border-color:var(--p,#7C3AED);background:rgba(124,58,237,.08)}
+.ex-ico{font-size:34px;margin-bottom:6px;opacity:.7}
+.ex-t1{font-size:14px;font-weight:600;margin-bottom:3px}
+.ex-t2{font-size:11px;color:var(--muted,#52525B)}
+.ex-stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:10px}
+.ex-stat{background:rgba(255,255,255,.03);border:1px solid var(--border,#2A2A35);border-radius:9px;padding:8px;text-align:center}
+.ex-v{font-size:18px;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.ex-l{font-size:9px;color:var(--muted,#52525B);text-transform:uppercase;letter-spacing:.3px;margin-top:1px}
+.ex-diff{max-height:220px;overflow-y:auto;border:1px solid var(--border,#2A2A35);border-radius:9px;
+  background:rgba(255,255,255,.02);margin-bottom:6px}
+.ex-diff-row{padding:7px 12px;border-bottom:1px solid rgba(255,255,255,.04);display:grid;
+  grid-template-columns:1fr auto auto;gap:8px;align-items:center;font-size:11px}
+.ex-diff-row:last-child{border-bottom:none}
+.ex-diff-row.add{background:rgba(34,197,94,.06)}
+.ex-diff-row.chg{background:rgba(234,179,8,.06)}
+.ex-diff-row.zero{background:rgba(239,68,68,.05)}
+.ex-dn{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ex-dbc{font-size:9px;color:var(--muted,#52525B);font-family:'IBM Plex Mono',monospace}
+.ex-tag{font-size:8px;padding:2px 6px;border-radius:8px;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.ex-tag-add{background:rgba(34,197,94,.15);color:#22C55E}
+.ex-tag-chg{background:rgba(234,179,8,.15);color:#EAB308}
+.ex-tag-zero{background:rgba(239,68,68,.15);color:#EF4444}
+.ex-dq{font-family:'IBM Plex Mono',monospace;font-weight:700}
+.ex-empty{padding:18px;text-align:center;color:var(--muted,#52525B);font-size:12px}
+.ex-log{background:rgba(255,255,255,.02);border:1px solid var(--border,#2A2A35);border-radius:9px;
+  padding:9px 12px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub,#71717A);
+  max-height:120px;overflow-y:auto;line-height:1.5;margin-bottom:6px}
+.ex-log .ok{color:#22C55E}.ex-log .err{color:#EF4444}.ex-log .warn{color:#EAB308}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="brand">
+    <div class="brand-logo">🍌</div>
+    <div>
+      <div class="logo">Stock <span class="logo-num">895</span></div>
+      <div class="status-line">
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncTxt">กำลังเชื่อมต่อ...</span>
+        <span class="status-sep">·</span>
+        <span class="clock" id="clk"></span>
+      </div>
+    </div>
+  </div>
+  <button class="lock-btn" id="lockBtn" onclick="openModal()">🔒 แก้ไขสต็อก</button>
+</div>
+
+
+
+<!-- ========== VIEW MODE (พนักงาน) ========== -->
+<div id="viewMode">
+<div class="ctrl">
+  <input class="search" id="q" placeholder="🔍  ค้นหา รุ่น · สี · เลข Product" oninput="render()">
+</div>
+<div class="frow" id="filterRow"></div>
+<div class="rbar" id="rbar"></div>
+
+<div class="wrap">
+  <div class="thead">
+    <span></span>
+    <span>รุ่น / สี / Product No. / ราคา</span>
+    <span class="sortable" onclick="doSort('qty')">จำนวน ↕</span>
+  </div>
+  <div id="list"></div>
+</div>
+</div>
+
+<!-- ========== ADMIN MODE (หน้าแก้ไข) ========== -->
+<div id="adminMode" style="display:none">
+  <div class="admin-panel">
+    <button class="admin-card excel" onclick="openExcelModal()">
+      <div class="ac-ico">📥</div>
+      <div class="ac-txt">
+        <div class="ac-title">อัปโหลด Excel</div>
+        <div class="ac-sub">อัปเดตสต็อกจากไฟล์ ITEC</div>
+      </div>
+    </button>
+
+    <div class="admin-scan-row">
+      <button class="admin-card scan-add" onclick="openScanMode('add')">
+        <div class="ac-ico">➕</div>
+        <div class="ac-title">สแกนเพิ่ม</div>
+        <div class="ac-sub">ของเข้า</div>
+      </button>
+      <button class="admin-card scan-del" onclick="openScanMode('del')">
+        <div class="ac-ico">➖</div>
+        <div class="ac-title">สแกนลบ</div>
+        <div class="ac-sub">ขายออก</div>
+      </button>
+    </div>
+
+    <div class="admin-changes">
+      <div class="ach-head">
+        <span>📝 รายการที่แก้ไข</span>
+        <span class="ach-count" id="achCount">0</span>
+      </div>
+      <div class="ach-list" id="achList">
+        <div class="ach-empty">ยังไม่มีการแก้ไข — สแกนเพื่อเริ่ม</div>
+      </div>
+    </div>
+
+    <button class="admin-save" id="saveBtn" onclick="saveAll()" disabled>💾 บันทึก</button>
+  </div>
+</div>
+
+<!-- Password Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div style="font-size:28px;margin-bottom:10px">🔐</div>
+    <h2>Admin Login</h2>
+    <p>ใส่รหัสผ่านเพื่อแก้ไขสต็อก</p>
+    <input type="password" id="pwInput" placeholder="••••••" maxlength="20" onkeydown="if(event.key==='Enter')checkPw()">
+    <div class="modal-err" id="pwErr"></div>
+    <button class="mbtn mbtn-p" onclick="checkPw()">เข้าสู่ระบบ</button>
+    <button class="mbtn mbtn-g" onclick="closeModal()">ยกเลิก</button>
+  </div>
+</div>
+<!-- Excel Upload Modal -->
+<div class="overlay" id="excelOverlay">
+  <div class="modal excel-modal">
+    <h3 style="text-align:center">📥 อัปโหลด Stock Excel</h3>
+    <p style="text-align:center;font-size:12px;color:var(--sub);margin-bottom:14px">
+      ลากไฟล์จาก ITEC มาวาง · อัปเดต qty + สินค้าใหม่อัตโนมัติ
+    </p>
+
+    <label class="ex-drop" id="exDrop">
+      <input type="file" id="exFile" accept=".xlsx,.xls" style="display:none">
+      <div class="ex-ico">📊</div>
+      <div class="ex-t1" id="exTitle">ลากไฟล์มาวาง หรือคลิกเลือก</div>
+      <div class="ex-t2" id="exSub">รองรับ Stock_*.xlsx</div>
+    </label>
+
+    <div id="exStats" style="display:none">
+      <div class="ex-stat-row">
+        <div class="ex-stat"><div class="ex-v" id="exTotal">0</div><div class="ex-l">ทั้งหมด</div></div>
+        <div class="ex-stat"><div class="ex-v" id="exAdd" style="color:var(--green)">0</div><div class="ex-l">เพิ่มใหม่</div></div>
+        <div class="ex-stat"><div class="ex-v" id="exChg" style="color:var(--yellow)">0</div><div class="ex-l">ปรับจำนวน</div></div>
+        <div class="ex-stat"><div class="ex-v" id="exZero" style="color:var(--sub)">0</div><div class="ex-l">หมด→0</div></div>
+      </div>
+      <div class="ex-diff" id="exDiff"></div>
+    </div>
+
+    <div class="ex-log" id="exLog" style="display:none"></div>
+
+    <button class="mbtn mbtn-p" id="exUpdateBtn" onclick="doExcelUpdate()" disabled style="margin-top:12px">⬆️ Update เข้า Firebase</button>
+    <button class="mbtn mbtn-g" onclick="closeExcelModal()">ปิด</button>
+  </div>
+</div>
+
+
+<!-- Add Product Modal -->
+<div class="overlay" id="addOverlay">
+  <div class="modal" style="width:340px;text-align:left">
+    <div style="font-size:24px;margin-bottom:8px;text-align:center">➕</div>
+    <h2 style="text-align:center;margin-bottom:4px">เพิ่มสินค้าใหม่</h2>
+    <p style="text-align:center;font-size:11px;color:var(--sub);margin-bottom:16px">กรอกแค่ 4 ช่อง — ที่เหลือระบบเติมให้</p>
+    <div style="display:grid;gap:11px">
+      <div>
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Barcode / Product No. *</label>
+        <input class="search" id="ap_barcode" placeholder="สแกนหรือพิมพ์" style="width:100%">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">ชื่อสินค้า * <span style="color:var(--p2)">(ใส่สี+ความจุในชื่อด้วย)</span></label>
+        <input class="search" id="ap_name" placeholder="Apple iPhone 16 128GB Black" style="width:100%" oninput="apPreview()">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">ราคา (฿) *</label>
+          <input class="search" id="ap_price" type="number" placeholder="26500" style="width:100%">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">จำนวน *</label>
+          <input class="search" id="ap_qty" type="number" placeholder="1" min="0" value="1" style="width:100%">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">หมวดหมู่ *</label>
+        <select class="search" id="ap_category" style="width:100%">
+          <option value="">-- เลือก --</option>
+          <option value="iPhone">iPhone</option>
+          <option value="iPad">iPad</option>
+          <option value="Apple Watch">Apple Watch</option>
+          <option value="Smartphone">Smartphone</option>
+          <option value="Tablet">Tablet</option>
+          <option value="Notebook">Notebook</option>
+        </select>
+      </div>
+      <div class="ap-preview" id="apPreviewBox" style="display:none">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">🤖 ระบบจะบันทึกเป็น:</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="cdot" id="apPvDot" style="width:22px;height:22px"></span>
+          <div style="font-size:12px;line-height:1.5">
+            <div>สี: <b id="apPvColor">—</b> · ความจุ: <b id="apPvStorage">—</b></div>
+            <div>แบรนด์: <b id="apPvBrand">—</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-err" id="apErr"></div>
+      <button class="mbtn mbtn-p" onclick="submitAddProduct()">✅ เพิ่มสินค้า</button>
+      <button class="mbtn mbtn-g" onclick="closeAddModal()">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scanner Modal (เพิ่ม/ลบ ด้วยการสแกน) -->
+<div class="overlay" id="scanOverlay">
+  <div class="modal scan-modal">
+    <h2 style="text-align:center;margin-bottom:4px" id="scanTitle">📷 สแกนเพิ่มสินค้า</h2>
+    <p style="text-align:center;font-size:12px;color:var(--sub);margin-bottom:12px" id="scanHint">ยิงบาร์โค้ดเพื่อ +1</p>
+    <div class="scan-wrap">
+      <div id="scanReader"></div>
+      <div class="scan-frame" id="scanFrame">
+        <span class="scan-corner tl"></span><span class="scan-corner tr"></span>
+        <span class="scan-corner bl"></span><span class="scan-corner br"></span>
+        <div class="scan-line"></div>
+      </div>
+    </div>
+    <div class="zoom-bar" id="zoomBar" style="display:none">
+      <span class="zoom-label">🔍 ซูม</span>
+      <button class="zoom-x on" data-z="1" onclick="zoomPreset(1)">x1</button>
+      <button class="zoom-x" data-z="2" onclick="zoomPreset(2)">x2</button>
+      <button class="zoom-x" data-z="3" onclick="zoomPreset(3)">x3</button>
+    </div>
+    <div class="scan-status" id="scanStatus">กำลังเปิดกล้อง...</div>
+    <button class="mbtn mbtn-p" id="scanAgainBtn" onclick="armScan()" style="display:none;margin-top:8px">📷 สแกนต่อ</button>
+    <div class="scan-recent" id="scanRecent"></div>
+    <button class="mbtn mbtn-g" onclick="closeScanMode()" style="margin-top:10px">✓ เสร็จสิ้น</button>
+  </div>
+</div>
+
+<script>
+let DATA = [{"barcode": "195949036071", "name": "Apple iPhone 15 128GB Black", "model": "Apple iPhone 15 128GB Black", "color": "Black", "storage": "128GB", "qty": 1, "set_price": 24100, "brand": "Apple", "category": "iPhone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "195949036255", "name": "Apple iPhone 15 128GB Pink", "model": "Apple iPhone 15 128GB Pink", "color": "Pink", "storage": "", "qty": 1, "set_price": 24100, "brand": "Apple", "category": "iPhone", "hex": "E8748A", "fg": "111111"}, {"barcode": "195949036613", "name": "Apple iPhone 15 128GB Blue", "model": "Apple iPhone 15 128GB Blue", "color": "Blue", "storage": "", "qty": 2, "set_price": 24100, "brand": "Apple", "category": "iPhone", "hex": "2550A0", "fg": "F5F5F5"}, {"barcode": "195949036972", "name": "Apple iPhone 15 256GB Black", "model": "Apple iPhone 15 256GB Black", "color": "Black", "storage": "256GB", "qty": 1, "set_price": 28100, "brand": "Apple", "category": "iPhone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "195949722271", "name": "Apple iPhone 16 Plus 128GB Black", "model": "Apple iPhone 16 Plus 128GB Black", "color": "Black", "storage": "128GB", "qty": 1, "set_price": 29500, "brand": "Apple", "category": "iPhone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "195949722653", "name": "Apple iPhone 16 Plus 128GB Pink", "model": "Apple iPhone 16 Plus 128GB Pink", "color": "Pink", "storage": "128GB", "qty": 1, "set_price": 29500, "brand": "Apple", "category": "iPhone", "hex": "E8748A", "fg": "111111"}, {"barcode": "195949723032", "name": "Apple iPhone 16 Plus 128GB Teal", "model": "Apple iPhone 16 Plus 128GB Teal", "color": "Teal", "storage": "128GB", "qty": 1, "set_price": 29500, "brand": "Apple", "category": "iPhone", "hex": "0D9488", "fg": "F5F5F5"}, {"barcode": "195949822155", "name": "Apple iPhone 16 128GB White", "model": "Apple iPhone 16 128GB White", "color": "White", "storage": "128GB", "qty": 2, "set_price": 26500, "brand": "Apple", "category": "iPhone", "hex": "F5F5F5", "fg": "111111"}, {"barcode": "195949822513", "name": "Apple iPhone 16 128GB Ultramarine", "model": "Apple iPhone 16 128GB Ultramarine", "color": "Ultramarine", "storage": "128GB", "qty": 1, "set_price": 26500, "brand": "Apple", "category": "iPhone", "hex": "3730A3", "fg": "F5F5F5"}, {"barcode": "195949822698", "name": "Apple iPhone 16 128GB Teal", "model": "Apple iPhone 16 128GB Teal", "color": "Teal", "storage": "128GB", "qty": 1, "set_price": 26500, "brand": "Apple", "category": "iPhone", "hex": "0D9488", "fg": "F5F5F5"}, {"barcode": "195950623277", "name": "Apple iPhone Air 256GB Sky Blue", "model": "Apple iPhone Air 256GB Sky Blue", "color": "Sky Blue", "storage": "256GB", "qty": 1, "set_price": 29900, "brand": "Apple", "category": "iPhone", "hex": "38BDF8", "fg": "F5F5F5"}, {"barcode": "195950627251", "name": "Apple iPhone 17 Pro 256GB Silver", "model": "Apple iPhone 17 Pro 256GB Silver", "color": "Silver", "storage": "256GB", "qty": 2, "set_price": 43900, "brand": "Apple", "category": "iPhone", "hex": "C0C0C0", "fg": "111111"}, {"barcode": "195950627459", "name": "Apple iPhone 17 Pro 256GB Cosmic Orange", "model": "Apple iPhone 17 Pro 256GB Cosmic Orange", "color": "Cosmic Orange", "storage": "256GB", "qty": 1, "set_price": 43900, "brand": "Apple", "category": "iPhone", "hex": "FF4500", "fg": "F5F5F5"}, {"barcode": "195950627657", "name": "Apple iPhone 17 Pro 256GB Deep Blue", "model": "Apple iPhone 17 Pro 256GB Deep Blue", "color": "Deep Blue", "storage": "256GB", "qty": 1, "set_price": 43900, "brand": "Apple", "category": "iPhone", "hex": "1E3A8A", "fg": "F5F5F5"}, {"barcode": "195950638905", "name": "Apple iPhone 17 Pro Max 256GB Silver", "model": "Apple iPhone 17 Pro Max 256GB Silver", "color": "Silver", "storage": "256GB", "qty": 1, "set_price": 48900, "brand": "Apple", "category": "iPhone", "hex": "C0C0C0", "fg": "111111"}, {"barcode": "195950639100", "name": "Apple iPhone 17 Pro Max 256GB Cosmic Orange", "model": "Apple iPhone 17 Pro Max 256GB Cosmic Orange", "color": "Cosmic Orange", "storage": "256GB", "qty": 2, "set_price": 48900, "brand": "Apple", "category": "iPhone", "hex": "FF4500", "fg": "F5F5F5"}, {"barcode": "195950639308", "name": "Apple iPhone 17 Pro Max 256GB Deep Blue", "model": "Apple iPhone 17 Pro Max 256GB Deep Blue", "color": "Deep Blue", "storage": "256GB", "qty": 1, "set_price": 48900, "brand": "Apple", "category": "iPhone", "hex": "1E3A8A", "fg": "F5F5F5"}, {"barcode": "195950639506", "name": "Apple iPhone 17 Pro Max 512GB Silver", "model": "Apple iPhone 17 Pro Max 512GB Silver", "color": "Silver", "storage": "512GB", "qty": 1, "set_price": 56900, "brand": "Apple", "category": "iPhone", "hex": "C0C0C0", "fg": "111111"}, {"barcode": "195950643596", "name": "Apple iPhone 17 256GB Black", "model": "Apple iPhone 17 256GB Black", "color": "Black", "storage": "256GB", "qty": 3, "set_price": 29900, "brand": "Apple", "category": "iPhone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "195950643794", "name": "Apple iPhone 17 256GB White", "model": "Apple iPhone 17 256GB White", "color": "White", "storage": "256GB", "qty": 3, "set_price": 29900, "brand": "Apple", "category": "iPhone", "hex": "F5F5F5", "fg": "111111"}, {"barcode": "195950643992", "name": "Apple iPhone 17 256GB Mist Blue", "model": "Apple iPhone 17 256GB Mist Blue", "color": "Mist Blue", "storage": "256GB", "qty": 2, "set_price": 29900, "brand": "Apple", "category": "iPhone", "hex": "5B8DB8", "fg": "F5F5F5"}, {"barcode": "195950644197", "name": "Apple iPhone 17 256GB Lavender", "model": "Apple iPhone 17 256GB Lavender", "color": "Lavender", "storage": "256GB", "qty": 1, "set_price": 29900, "brand": "Apple", "category": "iPhone", "hex": "C084FC", "fg": "111111"}, {"barcode": "195950086294", "name": "Apple iPad 11 : A16 Wi-Fi 128GB Silver 2025", "model": "Apple iPad 11 : A16 Wi-Fi 128GB Silver 2025", "color": "Silver", "storage": "128GB", "qty": 2, "set_price": 12900, "brand": "Apple", "category": "iPad", "hex": "C0C0C0", "fg": "111111"}, {"barcode": "195950086522", "name": "Apple iPad 11 : A16 Wi-Fi 128GB Blue 2025", "model": "Apple iPad 11 : A16 Wi-Fi 128GB Blue 2025", "color": "Blue", "storage": "128GB", "qty": 1, "set_price": 12900, "brand": "Apple", "category": "iPad", "hex": "2550A0", "fg": "F5F5F5"}, {"barcode": "195950086980", "name": "Apple iPad 11 : A16 Wi-Fi 128GB Pink 2025", "model": "Apple iPad 11 : A16 Wi-Fi 128GB Pink 2025", "color": "Pink", "storage": "128GB", "qty": 1, "set_price": 12900, "brand": "Apple", "category": "iPad", "hex": "E8748A", "fg": "111111"}, {"barcode": "195950087215", "name": "Apple iPad 11 : A16 Wi-Fi 256GB Silver 2025", "model": "Apple iPad 11 : A16 Wi-Fi 256GB Silver 2025", "color": "Silver", "storage": "256GB", "qty": 1, "set_price": 16900, "brand": "Apple", "category": "iPad", "hex": "C0C0C0", "fg": "111111"}, {"barcode": "195950823622", "name": "Apple iPad Air 11 : M4 Wi-Fi 128GB - Space Grey", "model": "Apple iPad Air 11 : M4 Wi-Fi 128GB - Space Grey", "color": "Space Grey", "storage": "128GB", "qty": 1, "set_price": 21900, "brand": "Apple", "category": "iPad", "hex": "6B7280", "fg": "F5F5F5"}, {"barcode": "195950823851", "name": "Apple iPad Air 11 : M4 Wi-Fi 128GB - Blue", "model": "Apple iPad Air 11 : M4 Wi-Fi 128GB - Blue", "color": "Blue", "storage": "128GB", "qty": 1, "set_price": 21900, "brand": "Apple", "category": "iPad", "hex": "2550A0", "fg": "F5F5F5"}, {"barcode": "195950824315", "name": "Apple iPad Air 11 : M4 Wi-Fi 128GB - Purple", "model": "Apple iPad Air 11 : M4 Wi-Fi 128GB - Purple", "color": "Purple", "storage": "128GB", "qty": 1, "set_price": 21900, "brand": "Apple", "category": "iPad", "hex": "5E3A8C", "fg": "F5F5F5"}, {"barcode": "195950386561", "name": "Apple Watch SE 3 GPS 40mm Starlight Aluminium Case with Starlight Sport Band - S/M", "model": "Apple Watch SE 3 GPS 40mm S/M", "color": "Starlight", "storage": "", "qty": 3, "set_price": 8300, "brand": "Apple", "category": "Apple Watch", "hex": "F2EFE7", "fg": "111111"}, {"barcode": "195950386769", "name": "Apple Watch SE 3 GPS 40mm Starlight Aluminium Case with Starlight Sport Band - M/L", "model": "Apple Watch SE 3 GPS 40mm M/L", "color": "Starlight", "storage": "", "qty": 1, "set_price": 8300, "brand": "Apple", "category": "Apple Watch", "hex": "F2EFE7", "fg": "111111"}, {"barcode": "195950387162", "name": "Apple Watch SE 3 GPS 40mm Midnight Aluminium Case with Midnight Sport Band - S/M", "model": "Apple Watch SE 3 GPS 40mm S/M", "color": "Midnight", "storage": "", "qty": 2, "set_price": 8300, "brand": "Apple", "category": "Apple Watch", "hex": "1C2526", "fg": "F5F5F5"}, {"barcode": "195950387766", "name": "Apple Watch SE 3 GPS 44mm Starlight Aluminium Case with Starlight Sport Band - S/M", "model": "Apple Watch SE 3 GPS 44mm S/M", "color": "Starlight", "storage": "", "qty": 1, "set_price": 9300, "brand": "Apple", "category": "Apple Watch", "hex": "F2EFE7", "fg": "111111"}, {"barcode": "195950387964", "name": "Apple Watch SE 3 GPS 44mm Starlight Aluminium Case with Starlight Sport Band - M/L", "model": "Apple Watch SE 3 GPS 44mm M/L", "color": "Starlight", "storage": "", "qty": 1, "set_price": 9300, "brand": "Apple", "category": "Apple Watch", "hex": "F2EFE7", "fg": "111111"}, {"barcode": "195950388367", "name": "Apple Watch SE 3 GPS 44mm Midnight Aluminium Case with Midnight Sport Band - S/M", "model": "Apple Watch SE 3 GPS 44mm S/M", "color": "Midnight", "storage": "", "qty": 1, "set_price": 9300, "brand": "Apple", "category": "Apple Watch", "hex": "1C2526", "fg": "F5F5F5"}, {"barcode": "195950388565", "name": "Apple Watch SE 3 GPS 44mm Midnight Aluminium Case with Midnight Sport Band - M/L", "model": "Apple Watch SE 3 GPS 44mm M/L", "color": "Midnight", "storage": "", "qty": 1, "set_price": 9300, "brand": "Apple", "category": "Apple Watch", "hex": "1C2526", "fg": "F5F5F5"}, {"barcode": "195950460650", "name": "Apple Watch Series 11 GPS 42mm Space Grey Aluminium Case with Black Sport Band - S/M", "model": "Apple Watch Series 11 GPS 42mm S/M", "color": "Space Grey", "storage": "", "qty": 1, "set_price": 14400, "brand": "Apple", "category": "Apple Watch", "hex": "6B7280", "fg": "F5F5F5"}, {"barcode": "195950461220", "name": "Apple Watch Series 11 GPS 42mm Rose Gold Aluminium Case with Light Blush Sport Band - S/M", "model": "Apple Watch Series 11 GPS 42mm S/M", "color": "Rose Gold", "storage": "", "qty": 2, "set_price": 14400, "brand": "Apple", "category": "Apple Watch", "hex": "B8936A", "fg": "111111"}, {"barcode": "195950462609", "name": "Apple Watch Series 11 GPS 46mm Jet Black Aluminium Case with Black Sport Band - S/M", "model": "Apple Watch Series 11 GPS 46mm S/M", "color": "Jet Black", "storage": "", "qty": 2, "set_price": 15400, "brand": "Apple", "category": "Apple Watch", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "195950462791", "name": "Apple Watch Series 11 GPS 46mm Jet Black Aluminium Case with Black Sport Band - M/L", "model": "Apple Watch Series 11 GPS 46mm M/L", "color": "Jet Black", "storage": "", "qty": 1, "set_price": 15400, "brand": "Apple", "category": "Apple Watch", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "195950463170", "name": "Apple Watch Series 11 GPS 46mm Space Grey Aluminium Case with Black Sport Band - S/M", "model": "Apple Watch Series 11 GPS 46mm S/M", "color": "Space Grey", "storage": "", "qty": 1, "set_price": 15400, "brand": "Apple", "category": "Apple Watch", "hex": "6B7280", "fg": "F5F5F5"}, {"barcode": "195950463361", "name": "Apple Watch Series 11 GPS 46mm Space Grey Aluminium Case with Black Sport Band - M/L", "model": "Apple Watch Series 11 GPS 46mm M/L", "color": "Space Grey", "storage": "", "qty": 2, "set_price": 15400, "brand": "Apple", "category": "Apple Watch", "hex": "6B7280", "fg": "F5F5F5"}, {"barcode": "195950463743", "name": "Apple Watch Series 11 GPS 46mm Rose Gold Aluminium Case with Light Blush Sport Band - S/M", "model": "Apple Watch Series 11 GPS 46mm S/M", "color": "Rose Gold", "storage": "", "qty": 1, "set_price": 15400, "brand": "Apple", "category": "Apple Watch", "hex": "B8936A", "fg": "111111"}, {"barcode": "195950466805", "name": "Apple Watch Series 11 GPS 42mm Jet Black Aluminium Case with Black Sport Band - S/M", "model": "Apple Watch Series 11 GPS 42mm S/M", "color": "Jet Black", "storage": "", "qty": 1, "set_price": 14400, "brand": "Apple", "category": "Apple Watch", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "4894947111150", "name": "Infinix Note Edge (8+256) Shadow Black (5G)", "model": "Infinix Note Edge (8+256) Shadow Black (5G)", "color": "Black", "storage": "256GB", "qty": 1, "set_price": 8499, "brand": "Infinix", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "4894947114359", "name": "Infinix Note 60 Pro (12+256) Mist Titanium (5G)", "model": "Infinix Note 60 Pro (12+256) Mist Titanium (5G)", "color": "Mist Titanium", "storage": "256GB", "qty": 1, "set_price": 12999, "brand": "Infinix", "category": "Smartphone", "hex": "C8C8D0", "fg": "111111"}, {"barcode": "4894947114441", "name": "Infinix Note 60 Pro (12+256) Mocha Brown (5G)", "model": "Infinix Note 60 Pro (12+256) Mocha Brown (5G)", "color": "Mocha Brown", "storage": "", "qty": 1, "set_price": 12999, "brand": "Infinix", "category": "Smartphone", "hex": "8B6347", "fg": "F5F5F5"}, {"barcode": "5103250016FB-BS", "name": "OPPO A5 Pro (8+256) Feather blue", "model": "OPPO A5 Pro (8+256) Feather blue", "color": "Feather blue", "storage": "256GB", "qty": 2, "set_price": 6499, "brand": "Oppo", "category": "Smartphone", "hex": "6CA0DC", "fg": "111111"}, {"barcode": "5106250035GY-BS", "name": "OPPO Reno14 Pro Titanium Grey (12+512) (5G)", "model": "OPPO Reno14 Pro Titanium Grey (12+512) (5G)", "color": "Titanium Grey", "storage": "512GB", "qty": 1, "set_price": 24999, "brand": "Oppo", "category": "Smartphone", "hex": "7A7D82", "fg": "F5F5F5"}, {"barcode": "5107250043WH", "name": "OPPO A5 (6+128) Mist White (5G)", "model": "OPPO A5 (6+128) Mist White (5G)", "color": "White", "storage": "128GB", "qty": 1, "set_price": 5999, "brand": "Oppo", "category": "Smartphone", "hex": "F5F5F5", "fg": "111111"}, {"barcode": "6902176141812", "name": "ZTE Nubia V70 Max (6+128GB) Gray", "model": "ZTE Nubia V70 Max (6+128GB) Gray", "color": "Gray", "storage": "128GB", "qty": 1, "set_price": 2999, "brand": "Zte", "category": "Smartphone", "hex": "808080", "fg": "111111"}, {"barcode": "6932169385237", "name": "OPPO Find X9 (12+256) Space Black (5G)", "model": "OPPO Find X9 (12+256) Space Black (5G)", "color": "Space Black", "storage": "256GB", "qty": 2, "set_price": 29999, "brand": "Oppo", "category": "Smartphone", "hex": "1A1A2E", "fg": "F5F5F5"}, {"barcode": "6932169390705", "name": "OPPO A6 (8+128) Aurora Gold", "model": "OPPO A6 (8+128) Aurora Gold", "color": "Aurora Gold", "storage": "128GB", "qty": 2, "set_price": 7999, "brand": "Oppo", "category": "Smartphone", "hex": "D4AF37", "fg": "111111"}, {"barcode": "6932169391078", "name": "OPPO A6 (8+128) Sapphire Blue", "model": "OPPO A6 (8+128) Sapphire Blue", "color": "Sapphire Blue", "storage": "128GB", "qty": 2, "set_price": 7999, "brand": "Oppo", "category": "Smartphone", "hex": "1B4F8A", "fg": "F5F5F5"}, {"barcode": "6932169392204", "name": "OPPO A6x (4+128) Plum Purple (5G)", "model": "OPPO A6x (4+128) Plum Purple (5G)", "color": "Plum Purple", "storage": "128GB", "qty": 2, "set_price": 6699, "brand": "Oppo", "category": "Smartphone", "hex": "6B2F8A", "fg": "F5F5F5"}, {"barcode": "6932169393232", "name": "OPPO Reno15 (12+256) Twilight Blue (5G)", "model": "OPPO Reno15 (12+256) Twilight Blue (5G)", "color": "Twilight Blue", "storage": "256GB", "qty": 3, "set_price": 18999, "brand": "Oppo", "category": "Smartphone", "hex": "2A4F7A", "fg": "F5F5F5"}, {"barcode": "6932169393249", "name": "OPPO Reno15 (12+256) Aurora White (5G)", "model": "OPPO Reno15 (12+256) Aurora White (5G)", "color": "Aurora White", "storage": "", "qty": 2, "set_price": 18999, "brand": "Oppo", "category": "Smartphone", "hex": "F5F5F5", "fg": "111111"}, {"barcode": "6932169393256", "name": "OPPO Reno15 (12+256) Aurora Blue (5G)", "model": "OPPO Reno15 (12+256) Aurora Blue (5G)", "color": "Aurora Blue", "storage": "256GB", "qty": 1, "set_price": 18999, "brand": "Oppo", "category": "Smartphone", "hex": "3B7DD8", "fg": "F5F5F5"}, {"barcode": "6932169393263", "name": "OPPO Reno15 (12+512) Twilight Blue (5G)", "model": "OPPO Reno15 (12+512) Twilight Blue (5G)", "color": "Twilight Blue", "storage": "", "qty": 2, "set_price": 20999, "brand": "Oppo", "category": "Smartphone", "hex": "2A4F7A", "fg": "F5F5F5"}, {"barcode": "6932169393560", "name": "OPPO Reno15F (12+256) Afterglow Pink (5G)", "model": "OPPO Reno15F (12+256) Afterglow Pink (5G)", "color": "Afterglow Pink", "storage": "256GB", "qty": 2, "set_price": 15999, "brand": "Oppo", "category": "Smartphone", "hex": "F4A0B5", "fg": "111111"}, {"barcode": "6932169393577", "name": "OPPO Reno15F (12+256) Aurora Blue (5G)", "model": "OPPO Reno15F (12+256) Aurora Blue (5G)", "color": "Aurora Blue", "storage": "", "qty": 3, "set_price": 15999, "brand": "Oppo", "category": "Smartphone", "hex": "3B7DD8", "fg": "F5F5F5"}, {"barcode": "6932169393584", "name": "OPPO Reno15F (12+256) Twilight Blue (5G)", "model": "OPPO Reno15F (12+256) Twilight Blue (5G)", "color": "Twilight Blue", "storage": "256GB", "qty": 2, "set_price": 15999, "brand": "Oppo", "category": "Smartphone", "hex": "2A4F7A", "fg": "F5F5F5"}, {"barcode": "6932169393997", "name": "OPPO A6 (6+128) Sakura Pink (5G)", "model": "OPPO A6 (6+128) Sakura Pink (5G)", "color": "Sakura Pink", "storage": "128GB", "qty": 1, "set_price": 8499, "brand": "Oppo", "category": "Smartphone", "hex": "F9A8C9", "fg": "111111"}, {"barcode": "6932169394000", "name": "OPPO A6 (6+128) Sapphire Blue (5G)", "model": "OPPO A6 (6+128) Sapphire Blue (5G)", "color": "Sapphire Blue", "storage": "128GB", "qty": 1, "set_price": 8499, "brand": "Oppo", "category": "Smartphone", "hex": "1B4F8A", "fg": "F5F5F5"}, {"barcode": "6932169395939", "name": "OPPO A6 (6+128) Sapphire Blue", "model": "OPPO A6 (6+128) Sapphire Blue", "color": "Sapphire Blue", "storage": "128GB", "qty": 2, "set_price": 6499, "brand": "Oppo", "category": "Smartphone", "hex": "1B4F8A", "fg": "F5F5F5"}, {"barcode": "6932169395946", "name": "OPPO A6 (6+128) Aurora Gold", "model": "OPPO A6 (6+128) Aurora Gold", "color": "Aurora Gold", "storage": "128GB", "qty": 2, "set_price": 6499, "brand": "Oppo", "category": "Smartphone", "hex": "D4AF37", "fg": "111111"}, {"barcode": "6932169396981", "name": "OPPO A6s (8+256) Cappuccino Brown (5G)", "model": "OPPO A6s (8+256) Cappuccino Brown (5G)", "color": "Cappuccino Brown", "storage": "", "qty": 1, "set_price": 11999, "brand": "Oppo", "category": "Smartphone", "hex": "6F4E37", "fg": "F5F5F5"}, {"barcode": "6932169397193", "name": "OPPO A6s (8+128) Ice White (5G)", "model": "OPPO A6s (8+128) Ice White (5G)", "color": "Ice White", "storage": "", "qty": 1, "set_price": 9999, "brand": "Oppo", "category": "Smartphone", "hex": "F0F4F8", "fg": "111111"}, {"barcode": "6932169397209", "name": "OPPO A6s (8+128) Cappuccino Brown (5G)", "model": "OPPO A6s (8+128) Cappuccino Brown (5G)", "color": "Cappuccino Brown", "storage": "", "qty": 2, "set_price": 9999, "brand": "Oppo", "category": "Smartphone", "hex": "6F4E37", "fg": "F5F5F5"}, {"barcode": "6932204505903", "name": "iQOO Neo 10 (12+256GB) Blazing Orange (5G)", "model": "iQOO Neo 10 (12+256GB) Blazing Orange (5G)", "color": "Blazing Orange", "storage": "256GB", "qty": 1, "set_price": 14900, "brand": "Iqoo", "category": "Smartphone", "hex": "EA580C", "fg": "F5F5F5"}, {"barcode": "6932204508348", "name": "iQOO Neo 10 (16+512GB) Blazing Orange (5G)", "model": "iQOO Neo 10 (16+512GB) Blazing Orange (5G)", "color": "Blazing Orange", "storage": "512GB", "qty": 1, "set_price": 16900, "brand": "Iqoo", "category": "Smartphone", "hex": "EA580C", "fg": "F5F5F5"}, {"barcode": "6932204508355", "name": "iQOO Neo 10 (16+512GB) Cosmic Black (5G)", "model": "iQOO Neo 10 (16+512GB) Cosmic Black (5G)", "color": "Cosmic Black", "storage": "512GB", "qty": 1, "set_price": 16900, "brand": "Iqoo", "category": "Smartphone", "hex": "1C1C1E", "fg": "F5F5F5"}, {"barcode": "6932204511270", "name": "vivo Y21d (6+128GB) Glowing Black", "model": "vivo Y21d (6+128GB) Glowing Black", "color": "Glowing Black", "storage": "128GB", "qty": 2, "set_price": 6999, "brand": "Vivo", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "6932204512284", "name": "vivo Y21d (6+128GB) Lavender Purple", "model": "vivo Y21d (6+128GB) Lavender Purple", "color": "Lavender Purple", "storage": "128GB", "qty": 2, "set_price": 6999, "brand": "Vivo", "category": "Smartphone", "hex": "9B59B6", "fg": "F5F5F5"}, {"barcode": "6932204515025", "name": "vivo Y31 (8+256GB) Jade Green (5G)", "model": "vivo Y31 (8+256GB) Jade Green (5G)", "color": "Jade Green", "storage": "", "qty": 1, "set_price": 8499, "brand": "Vivo", "category": "Smartphone", "hex": "15803D", "fg": "F5F5F5"}, {"barcode": "6932204516190", "name": "vivo Y31 (8+256GB) Marble White (5G)", "model": "vivo Y31 (8+256GB) Marble White (5G)", "color": "Marble White", "storage": "256GB", "qty": 2, "set_price": 8499, "brand": "Vivo", "category": "Smartphone", "hex": "F0F0EC", "fg": "111111"}, {"barcode": "6932204516299", "name": "vivo Y04s (4+64GB) Titanium Gold", "model": "vivo Y04s (4+64GB) Titanium Gold", "color": "Titanium Gold", "storage": "64GB", "qty": 1, "set_price": 3099, "brand": "Vivo", "category": "Smartphone", "hex": "B7860B", "fg": "111111"}, {"barcode": "6932204518651", "name": "vivo V70 (12+256GB) Authentic Black (5G)", "model": "vivo V70 (12+256GB) Authentic Black (5G)", "color": "Black", "storage": "256GB", "qty": 2, "set_price": 19999, "brand": "Vivo", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "6932204520661", "name": "vivo V70 FE (12+256GB) Ocean Blue (5G)", "model": "vivo V70 FE (12+256GB) Ocean Blue (5G)", "color": "Ocean Blue", "storage": "", "qty": 1, "set_price": 14999, "brand": "Vivo", "category": "Smartphone", "hex": "1A6EA8", "fg": "F5F5F5"}, {"barcode": "6932204520678", "name": "vivo V70 FE (8+256GB) Ocean Blue (5G)", "model": "vivo V70 FE (8+256GB) Ocean Blue (5G)", "color": "Ocean Blue", "storage": "", "qty": 2, "set_price": 12999, "brand": "Vivo", "category": "Smartphone", "hex": "1A6EA8", "fg": "F5F5F5"}, {"barcode": "6932204520982", "name": "vivo Y05 (4+128GB) Voyage Black", "model": "vivo Y05 (4+128GB) Voyage Black", "color": "Voyage Black", "storage": "128GB", "qty": 1, "set_price": 4599, "brand": "Vivo", "category": "Smartphone", "hex": "1A1A1A", "fg": "F5F5F5"}, {"barcode": "6932204521286", "name": "vivo V70 FE (12+256GB) Muse Purple (5G)", "model": "vivo V70 FE (12+256GB) Muse Purple (5G)", "color": "Muse Purple", "storage": "", "qty": 1, "set_price": 14999, "brand": "Vivo", "category": "Smartphone", "hex": "5E3A8C", "fg": "F5F5F5"}, {"barcode": "6932204521293", "name": "vivo V70 FE (8+256GB) Muse Purple (5G)", "model": "vivo V70 FE (8+256GB) Muse Purple (5G)", "color": "Muse Purple", "storage": "", "qty": 3, "set_price": 12999, "brand": "Vivo", "category": "Smartphone", "hex": "5E3A8C", "fg": "F5F5F5"}, {"barcode": "6932204521309", "name": "vivo V70 FE (12+256GB) Urban Silver (5G)", "model": "vivo V70 FE (12+256GB) Urban Silver (5G)", "color": "Silver", "storage": "", "qty": 1, "set_price": 14999, "brand": "Vivo", "category": "Smartphone", "hex": "C0C0C0", "fg": "111111"}, {"barcode": "6932204521316", "name": "vivo V70 FE (8+256GB) Urban Silver (5G)", "model": "vivo V70 FE (8+256GB) Urban Silver (5G)", "color": "Silver", "storage": "", "qty": 2, "set_price": 12999, "brand": "Vivo", "category": "Smartphone", "hex": "C0C0C0", "fg": "111111"}, {"barcode": "6932204523211", "name": "vivo V70 (8+256GB) Authentic Black (5G)", "model": "vivo V70 (8+256GB) Authentic Black (5G)", "color": "Black", "storage": "", "qty": 1, "set_price": 17999, "brand": "Vivo", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "6932204523693", "name": "vivo Y05 (4+128GB) Haze Blue", "model": "vivo Y05 (4+128GB) Haze Blue", "color": "Haze Blue", "storage": "128GB", "qty": 1, "set_price": 4599, "brand": "Vivo", "category": "Smartphone", "hex": "B8D4E8", "fg": "111111"}, {"barcode": "6932204523709", "name": "vivo Y05 (4+64GB) Haze Blue", "model": "vivo Y05 (4+64GB) Haze Blue", "color": "Haze Blue", "storage": "64GB", "qty": 1, "set_price": 3999, "brand": "Vivo", "category": "Smartphone", "hex": "B8D4E8", "fg": "111111"}, {"barcode": "6932204523716", "name": "vivo Y05 (4+128GB) Summit Platinum", "model": "vivo Y05 (4+128GB) Summit Platinum", "color": "Summit Platinum", "storage": "128GB", "qty": 3, "set_price": 4599, "brand": "Vivo", "category": "Smartphone", "hex": "555555", "fg": "F5F5F5"}, {"barcode": "6932204523723", "name": "vivo Y05 (4+64GB) Summit Platinum", "model": "vivo Y05 (4+64GB) Summit Platinum", "color": "Summit Platinum", "storage": "64GB", "qty": 2, "set_price": 3999, "brand": "Vivo", "category": "Smartphone", "hex": "555555", "fg": "F5F5F5"}, {"barcode": "6932204523730", "name": "vivo Y05 (4+64GB) Voyage Black", "model": "vivo Y05 (4+64GB) Voyage Black", "color": "Voyage Black", "storage": "64GB", "qty": 1, "set_price": 3999, "brand": "Vivo", "category": "Smartphone", "hex": "1A1A1A", "fg": "F5F5F5"}, {"barcode": "6932204527615", "name": "vivo Y11d (4+128GB) Summit Platinum", "model": "vivo Y11d (4+128GB) Summit Platinum", "color": "Summit Platinum", "storage": "128GB", "qty": 3, "set_price": 5499, "brand": "Vivo", "category": "Smartphone", "hex": "555555", "fg": "F5F5F5"}, {"barcode": "6932204527622", "name": "vivo Y11d (4+128GB) Voyage Black", "model": "vivo Y11d (4+128GB) Voyage Black", "color": "Voyage Black", "storage": "128GB", "qty": 2, "set_price": 5499, "brand": "Vivo", "category": "Smartphone", "hex": "1A1A1A", "fg": "F5F5F5"}, {"barcode": "6932204529305", "name": "vivo Y31d (6+128GB) Starlight Grey", "model": "vivo Y31d (6+128GB) Starlight Grey", "color": "Starlight", "storage": "128GB", "qty": 2, "set_price": 8499, "brand": "Vivo", "category": "Smartphone", "hex": "F2EFE7", "fg": "111111"}, {"barcode": "6932204529312", "name": "vivo Y31d (6+128GB) Glow White", "model": "vivo Y31d (6+128GB) Glow White", "color": "White", "storage": "128GB", "qty": 2, "set_price": 8499, "brand": "Vivo", "category": "Smartphone", "hex": "F5F5F5", "fg": "111111"}, {"barcode": "6932204530578", "name": "vivo Y31d (6+256GB) Starlight Grey", "model": "vivo Y31d (6+256GB) Starlight Grey", "color": "Starlight", "storage": "256GB", "qty": 1, "set_price": 9999, "brand": "Vivo", "category": "Smartphone", "hex": "F2EFE7", "fg": "111111"}, {"barcode": "6932204530585", "name": "vivo Y31d (6+256GB) Glow White", "model": "vivo Y31d (6+256GB) Glow White", "color": "White", "storage": "256GB", "qty": 1, "set_price": 9999, "brand": "Vivo", "category": "Smartphone", "hex": "F5F5F5", "fg": "111111"}, {"barcode": "6932554425012", "name": "Xiaomi Redmi A5 (3+64) Midnight Black", "model": "Xiaomi Redmi A5 (3+64) Midnight Black", "color": "Midnight Black", "storage": "64GB", "qty": 3, "set_price": 2799, "brand": "Xiaomi", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "6932554425623", "name": "Xiaomi Redmi A5 (3+64) Sandy Gold", "model": "Xiaomi Redmi A5 (3+64) Sandy Gold", "color": "Sandy Gold", "storage": "64GB", "qty": 1, "set_price": 2799, "brand": "Xiaomi", "category": "Smartphone", "hex": "D4A027", "fg": "111111"}, {"barcode": "6932554425821", "name": "Xiaomi Redmi A5 (3+64) Ocean Blue", "model": "Xiaomi Redmi A5 (3+64) Ocean Blue", "color": "Ocean Blue", "storage": "64GB", "qty": 2, "set_price": 2799, "brand": "Xiaomi", "category": "Smartphone", "hex": "1A6EA8", "fg": "F5F5F5"}, {"barcode": "6932554447236", "name": "Xiaomi Redmi 15C (6+128) Midnight Black", "model": "Xiaomi Redmi 15C (6+128) Midnight Black", "color": "Midnight Black", "storage": "128GB", "qty": 2, "set_price": 3999, "brand": "Xiaomi", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "6932554452964", "name": "Xiaomi Redmi 15 (8+256) Midnight Black (5G)", "model": "Xiaomi Redmi 15 (8+256) Midnight Black (5G)", "color": "Midnight Black", "storage": "256GB", "qty": 2, "set_price": 5999, "brand": "Xiaomi", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "6932554455910", "name": "Xiaomi Redmi 15C (6+128) Mint Green", "model": "Xiaomi Redmi 15C (6+128) Mint Green", "color": "Mint Green", "storage": "128GB", "qty": 2, "set_price": 3999, "brand": "Xiaomi", "category": "Smartphone", "hex": "3EB489", "fg": "F5F5F5"}, {"barcode": "6932554456184", "name": "Xiaomi Redmi 15C (6+128) Moonlight Blue", "model": "Xiaomi Redmi 15C (6+128) Moonlight Blue", "color": "Blue", "storage": "", "qty": 3, "set_price": 3999, "brand": "Xiaomi", "category": "Smartphone", "hex": "2550A0", "fg": "F5F5F5"}, {"barcode": "6932554468026", "name": "Xiaomi Redmi Note 15 Pro+ (12+512) Black (5G)", "model": "Xiaomi Redmi Note 15 Pro+ (12+512) Black (5G)", "color": "Black", "storage": "512GB", "qty": 1, "set_price": 16990, "brand": "Xiaomi", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "6932554469368", "name": "Xiaomi Redmi Note 15 (8+256) Purple (5G)", "model": "Xiaomi Redmi Note 15 (8+256) Purple (5G)", "color": "Purple", "storage": "256GB", "qty": 2, "set_price": 8499, "brand": "Xiaomi", "category": "Smartphone", "hex": "5E3A8C", "fg": "F5F5F5"}, {"barcode": "6932554469528", "name": "Xiaomi Redmi Note 15 (8+256) Black (5G)", "model": "Xiaomi Redmi Note 15 (8+256) Black (5G)", "color": "Black", "storage": "", "qty": 2, "set_price": 8499, "brand": "Xiaomi", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "6932554469542", "name": "Xiaomi Redmi Note 15 (8+256) Glacier Blue (5G)", "model": "Xiaomi Redmi Note 15 (8+256) Glacier Blue (5G)", "color": "Glacier Blue", "storage": "", "qty": 1, "set_price": 8499, "brand": "Xiaomi", "category": "Smartphone", "hex": "4A90D9", "fg": "F5F5F5"}, {"barcode": "6932554469962", "name": "Xiaomi Redmi Note 15 Pro (12+512) Titanium (5G)", "model": "Xiaomi Redmi Note 15 Pro (12+512) Titanium (5G)", "color": "Titanium", "storage": "", "qty": 1, "set_price": 14990, "brand": "Xiaomi", "category": "Smartphone", "hex": "B8C0C8", "fg": "111111"}, {"barcode": "6932554470029", "name": "Xiaomi Redmi Note 15 Pro (8+256) Titanium (5G)", "model": "Xiaomi Redmi Note 15 Pro (8+256) Titanium (5G)", "color": "Titanium", "storage": "", "qty": 1, "set_price": 11999, "brand": "Xiaomi", "category": "Smartphone", "hex": "B8C0C8", "fg": "111111"}, {"barcode": "6932554470081", "name": "Xiaomi Redmi Note 15 Pro (12+512) Purple (5G)", "model": "Xiaomi Redmi Note 15 Pro (12+512) Purple (5G)", "color": "Purple", "storage": "512GB", "qty": 1, "set_price": 14990, "brand": "Xiaomi", "category": "Smartphone", "hex": "5E3A8C", "fg": "F5F5F5"}, {"barcode": "6932554470296", "name": "Xiaomi Redmi Note 15 Pro (8+256) Purple (5G)", "model": "Xiaomi Redmi Note 15 Pro (8+256) Purple (5G)", "color": "Purple", "storage": "256GB", "qty": 1, "set_price": 11999, "brand": "Xiaomi", "category": "Smartphone", "hex": "5E3A8C", "fg": "F5F5F5"}, {"barcode": "6932554471729", "name": "Xiaomi Redmi Note 15 Pro (8+256) Black (5G)", "model": "Xiaomi Redmi Note 15 Pro (8+256) Black (5G)", "color": "Black", "storage": "", "qty": 1, "set_price": 11999, "brand": "Xiaomi", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "6932554481636", "name": "Xiaomi Redmi Note 15 Pro+ (12+512) Mocha Brown (5G)", "model": "Xiaomi Redmi Note 15 Pro+ (12+512) Mocha Brown (5G)", "color": "Mocha Brown", "storage": "512GB", "qty": 3, "set_price": 16990, "brand": "Xiaomi", "category": "Smartphone", "hex": "8B6347", "fg": "F5F5F5"}, {"barcode": "6932554493745", "name": "Xiaomi Redmi A7 Pro (4+64) Palm Green", "model": "Xiaomi Redmi A7 Pro (4+64) Palm Green", "color": "Green", "storage": "64GB", "qty": 1, "set_price": 3299, "brand": "Xiaomi", "category": "Smartphone", "hex": "16A34A", "fg": "F5F5F5"}, {"barcode": "6932554493790", "name": "Xiaomi Redmi A7 Pro (4+128) Palm Green", "model": "Xiaomi Redmi A7 Pro (4+128) Palm Green", "color": "Green", "storage": "128GB", "qty": 2, "set_price": 3699, "brand": "Xiaomi", "category": "Smartphone", "hex": "16A34A", "fg": "F5F5F5"}, {"barcode": "6932554493851", "name": "Xiaomi Redmi A7 Pro (4+64) Mist Blue", "model": "Xiaomi Redmi A7 Pro (4+64) Mist Blue", "color": "Mist Blue", "storage": "64GB", "qty": 2, "set_price": 3299, "brand": "Xiaomi", "category": "Smartphone", "hex": "5B8DB8", "fg": "F5F5F5"}, {"barcode": "6932554493875", "name": "Xiaomi Redmi A7 Pro (4+64) Black", "model": "Xiaomi Redmi A7 Pro (4+64) Black", "color": "Black", "storage": "64GB", "qty": 1, "set_price": 3299, "brand": "Xiaomi", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "6932554493899", "name": "Xiaomi Redmi A7 Pro (4+128) Black", "model": "Xiaomi Redmi A7 Pro (4+128) Black", "color": "Black", "storage": "128GB", "qty": 1, "set_price": 3699, "brand": "Xiaomi", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "6932554493967", "name": "Xiaomi Redmi A7 Pro (4+128) Mist Blue", "model": "Xiaomi Redmi A7 Pro (4+128) Mist Blue", "color": "Mist Blue", "storage": "128GB", "qty": 1, "set_price": 3699, "brand": "Xiaomi", "category": "Smartphone", "hex": "5B8DB8", "fg": "F5F5F5"}, {"barcode": "6935117899435", "name": "vivo V60 Lite (8+256GB) Titanium Blue (5G)", "model": "vivo V60 Lite (8+256GB) Titanium Blue (5G)", "color": "Titanium Blue", "storage": "256GB", "qty": 1, "set_price": 9999, "brand": "Vivo", "category": "Smartphone", "hex": "385F8C", "fg": "F5F5F5"}, {"barcode": "6936520871438", "name": "Honor X6c (6+128GB) Midnight Black", "model": "Honor X6c (6+128GB) Midnight Black", "color": "Midnight Black", "storage": "128GB", "qty": 2, "set_price": 4499, "brand": "Honor", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "6936520871445", "name": "Honor X6c (6+128GB) Ocean Cyan", "model": "Honor X6c (6+128GB) Ocean Cyan", "color": "Ocean Cyan", "storage": "128GB", "qty": 2, "set_price": 4499, "brand": "Honor", "category": "Smartphone", "hex": "0891B2", "fg": "F5F5F5"}, {"barcode": "6936520877409", "name": "Honor X7d (8+256GB) Velvet Black (5G)", "model": "Honor X7d (8+256GB) Velvet Black (5G)", "color": "Velvet Black", "storage": "256GB", "qty": 1, "set_price": 7999, "brand": "Honor", "category": "Smartphone", "hex": "1A1A1A", "fg": "F5F5F5"}, {"barcode": "6936520877416", "name": "Honor X7d (8+256GB) Desert Gold (5G)", "model": "Honor X7d (8+256GB) Desert Gold (5G)", "color": "Desert Gold", "storage": "256GB", "qty": 1, "set_price": 7999, "brand": "Honor", "category": "Smartphone", "hex": "C8960C", "fg": "111111"}, {"barcode": "6936520877423", "name": "Honor X7d (8+256GB) Meteor Silver (5G)", "model": "Honor X7d (8+256GB) Meteor Silver (5G)", "color": "Meteor Silver", "storage": "256GB", "qty": 1, "set_price": 7999, "brand": "Honor", "category": "Smartphone", "hex": "B8BCC4", "fg": "111111"}, {"barcode": "6936520880041", "name": "Honor X5c Plus (4+128GB) Meteor Silver", "model": "Honor X5c Plus (4+128GB) Meteor Silver", "color": "Meteor Silver", "storage": "128GB", "qty": 2, "set_price": 3499, "brand": "Honor", "category": "Smartphone", "hex": "B8BCC4", "fg": "111111"}, {"barcode": "6936520880058", "name": "Honor X5c Plus (4+128GB) Ocean Cyan", "model": "Honor X5c Plus (4+128GB) Ocean Cyan", "color": "Ocean Cyan", "storage": "128GB", "qty": 2, "set_price": 3499, "brand": "Honor", "category": "Smartphone", "hex": "0891B2", "fg": "F5F5F5"}, {"barcode": "6936520880874", "name": "Honor X9d (12+256GB) Midnight Black (5G)", "model": "Honor X9d (12+256GB) Midnight Black (5G)", "color": "Midnight Black", "storage": "256GB", "qty": 1, "set_price": 13999, "brand": "Honor", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "6936520880898", "name": "Honor X9d (12+256GB) Sunrise Gold (5G)", "model": "Honor X9d (12+256GB) Sunrise Gold (5G)", "color": "Sunrise Gold", "storage": "256GB", "qty": 1, "set_price": 13999, "brand": "Honor", "category": "Smartphone", "hex": "D97706", "fg": "F5F5F5"}, {"barcode": "6936520880904", "name": "Honor X9d (12+256GB) Reddish Brown (5G)", "model": "Honor X9d (12+256GB) Reddish Brown (5G)", "color": "Reddish Brown", "storage": "256GB", "qty": 1, "set_price": 13999, "brand": "Honor", "category": "Smartphone", "hex": "92400E", "fg": "F5F5F5"}, {"barcode": "6936520881314", "name": "Honor X7d (8+256GB) Desert Gold", "model": "Honor X7d (8+256GB) Desert Gold", "color": "Desert Gold", "storage": "256GB", "qty": 1, "set_price": 5999, "brand": "Honor", "category": "Smartphone", "hex": "C8960C", "fg": "111111"}, {"barcode": "6936520881321", "name": "Honor X7d (8+256GB) Ocean Cyan", "model": "Honor X7d (8+256GB) Ocean Cyan", "color": "Ocean Cyan", "storage": "", "qty": 1, "set_price": 5999, "brand": "Honor", "category": "Smartphone", "hex": "0891B2", "fg": "F5F5F5"}, {"barcode": "6941764464872", "name": "Realme C71 (4+128) Forest Owl", "model": "Realme C71 (4+128) Forest Owl", "color": "Forest Owl", "storage": "128GB", "qty": 1, "set_price": 3999, "brand": "Realme", "category": "Smartphone", "hex": "4A6741", "fg": "111111"}, {"barcode": "6941764464926", "name": "Realme C71 (4+128) White Swan", "model": "Realme C71 (4+128) White Swan", "color": "White Swan", "storage": "128GB", "qty": 1, "set_price": 3999, "brand": "Realme", "category": "Smartphone", "hex": "F5F5F5", "fg": "111111"}, {"barcode": "6941764478725", "name": "Realme C85 (8+128) Peacock Green (5G)", "model": "Realme C85 (8+128) Peacock Green (5G)", "color": "Peacock Green", "storage": "128GB", "qty": 1, "set_price": 7999, "brand": "Realme", "category": "Smartphone", "hex": "1A7A6E", "fg": "F5F5F5"}, {"barcode": "6941764478763", "name": "Realme C85 (8+256) Peacock Green (5G)", "model": "Realme C85 (8+256) Peacock Green (5G)", "color": "Peacock Green", "storage": "256GB", "qty": 1, "set_price": 8999, "brand": "Realme", "category": "Smartphone", "hex": "1A7A6E", "fg": "F5F5F5"}, {"barcode": "6941764478800", "name": "Realme C85 (8+128) Parrot Purple (5G)", "model": "Realme C85 (8+128) Parrot Purple (5G)", "color": "Parrot Purple", "storage": "128GB", "qty": 1, "set_price": 7999, "brand": "Realme", "category": "Smartphone", "hex": "7B4FA6", "fg": "F5F5F5"}, {"barcode": "6941764478848", "name": "Realme C85 (8+256) Parrot Purple (5G)", "model": "Realme C85 (8+256) Parrot Purple (5G)", "color": "Parrot Purple", "storage": "256GB", "qty": 1, "set_price": 8999, "brand": "Realme", "category": "Smartphone", "hex": "7B4FA6", "fg": "F5F5F5"}, {"barcode": "6941764481831", "name": "Realme C85 (8+128) Swan Black", "model": "Realme C85 (8+128) Swan Black", "color": "Black", "storage": "128GB", "qty": 1, "set_price": 5999, "brand": "Realme", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "6941764481992", "name": "Realme C85 (8+128) Parrot Purple", "model": "Realme C85 (8+128) Parrot Purple", "color": "Parrot Purple", "storage": "", "qty": 1, "set_price": 5999, "brand": "Realme", "category": "Smartphone", "hex": "7B4FA6", "fg": "F5F5F5"}, {"barcode": "6941764487826", "name": "Realme Note 80 (4+64) Storm Black", "model": "Realme Note 80 (4+64) Storm Black", "color": "Black", "storage": "64GB", "qty": 2, "set_price": 3999, "brand": "Realme", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "6941764487888", "name": "Realme Note 80 (4+64) Glacier Blue", "model": "Realme Note 80 (4+64) Glacier Blue", "color": "Glacier Blue", "storage": "64GB", "qty": 2, "set_price": 3999, "brand": "Realme", "category": "Smartphone", "hex": "4A90D9", "fg": "F5F5F5"}, {"barcode": "6941764489059", "name": "Realme C100 (4+128) Sprouting Green (5G)", "model": "Realme C100 (4+128) Sprouting Green (5G)", "color": "Sprouting Green", "storage": "", "qty": 1, "set_price": 6999, "brand": "Realme", "category": "Smartphone", "hex": "16A34A", "fg": "F5F5F5"}, {"barcode": "6941764489097", "name": "Realme C100 (6+128) Sprouting Green (5G)", "model": "Realme C100 (6+128) Sprouting Green (5G)", "color": "Sprouting Green", "storage": "", "qty": 1, "set_price": 7499, "brand": "Realme", "category": "Smartphone", "hex": "16A34A", "fg": "F5F5F5"}, {"barcode": "6941764489295", "name": "Realme C100 (6+128) Blooming Purple (5G)", "model": "Realme C100 (6+128) Blooming Purple (5G)", "color": "Blooming Purple", "storage": "", "qty": 1, "set_price": 7499, "brand": "Realme", "category": "Smartphone", "hex": "5E3A8C", "fg": "F5F5F5"}, {"barcode": "6941764490659", "name": "Realme C100i (4+128) Dusk Grey", "model": "Realme C100i (4+128) Dusk Grey", "color": "Dusk Grey", "storage": "", "qty": 1, "set_price": 4999, "brand": "Realme", "category": "Smartphone", "hex": "808080", "fg": "F5F5F5"}, {"barcode": "6941764490772", "name": "Realme C100i (4+128) Dawn Purple", "model": "Realme C100i (4+128) Dawn Purple", "color": "Dawn Purple", "storage": "", "qty": 1, "set_price": 4999, "brand": "Realme", "category": "Smartphone", "hex": "5E3A8C", "fg": "F5F5F5"}, {"barcode": "6942675400515", "name": "OPPO A6c (4+128) Stone Brown", "model": "OPPO A6c (4+128) Stone Brown", "color": "Stone Brown", "storage": "", "qty": 3, "set_price": 5999, "brand": "Oppo", "category": "Smartphone", "hex": "8B6347", "fg": "F5F5F5"}, {"barcode": "6942675400522", "name": "OPPO A6c (4+128) Feather White", "model": "OPPO A6c (4+128) Feather White", "color": "Feather White", "storage": "", "qty": 2, "set_price": 5999, "brand": "Oppo", "category": "Smartphone", "hex": "F5F5F5", "fg": "111111"}, {"barcode": "6942675400539", "name": "OPPO A6c (4+64) Stone Brown", "model": "OPPO A6c (4+64) Stone Brown", "color": "Stone Brown", "storage": "", "qty": 2, "set_price": 4999, "brand": "Oppo", "category": "Smartphone", "hex": "8B6347", "fg": "F5F5F5"}, {"barcode": "6942675400546", "name": "OPPO A6c (4+64) Feather Purple", "model": "OPPO A6c (4+64) Feather Purple", "color": "Feather Purple", "storage": "", "qty": 5, "set_price": 4999, "brand": "Oppo", "category": "Smartphone", "hex": "5E3A8C", "fg": "F5F5F5"}, {"barcode": "8806097010890", "name": "Samsung Galaxy S25 Ultra (12+256) TITANIUM BLACK (5G)", "model": "Samsung Galaxy S25 Ultra (12+256) TITANIUM BLACK (5G)", "color": "TITANIUM BLACK", "storage": "256GB", "qty": 2, "set_price": 42900, "brand": "Samsung", "category": "Smartphone", "hex": "2C2C2E", "fg": "F5F5F5"}, {"barcode": "8806097010913", "name": "Samsung Galaxy S25 Ultra (12+256) TITANIUM BLUE (5G)", "model": "Samsung Galaxy S25 Ultra (12+256) TITANIUM BLUE (5G)", "color": "TITANIUM BLUE", "storage": "256GB", "qty": 1, "set_price": 42900, "brand": "Samsung", "category": "Smartphone", "hex": "385F8C", "fg": "F5F5F5"}, {"barcode": "8806097495949", "name": "Samsung Galaxy Z Flip7 (12+256GB) Black (5G)", "model": "Samsung Galaxy Z Flip7 (12+256GB) Black (5G)", "color": "Black", "storage": "256GB", "qty": 1, "set_price": 40900, "brand": "Samsung", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "8806097668107", "name": "Samsung Galaxy A17 (8+256GB) Black (5G)", "model": "Samsung Galaxy A17 (8+256GB) Black (5G)", "color": "Black", "storage": "256GB", "qty": 1, "set_price": 8999, "brand": "Samsung", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "8806097668404", "name": "Samsung Galaxy A17 (8+128GB) Black (5G)", "model": "Samsung Galaxy A17 (8+128GB) Black (5G)", "color": "Black", "storage": "128GB", "qty": 3, "set_price": 7499, "brand": "Samsung", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "8806097678229", "name": "Samsung Galaxy S25 FE (8+256GB) Dark Blue (5G)", "model": "Samsung Galaxy S25 FE (8+256GB) Dark Blue (5G)", "color": "Dark Blue", "storage": "256GB", "qty": 2, "set_price": 26900, "brand": "Samsung", "category": "Smartphone", "hex": "1E3A8A", "fg": "F5F5F5"}, {"barcode": "8806097881537", "name": "Samsung Galaxy S26 Ultra (12+512GB) SKY BLUE (5G)", "model": "Samsung Galaxy S26 Ultra (12+512GB) SKY BLUE (5G)", "color": "SKY BLUE", "storage": "512GB", "qty": 1, "set_price": 54900, "brand": "Samsung", "category": "Smartphone", "hex": "38BDF8", "fg": "F5F5F5"}, {"barcode": "8806097882022", "name": "Samsung Galaxy S26 Ultra (12+256GB) COBALT VIOLET (5G)", "model": "Samsung Galaxy S26 Ultra (12+256GB) COBALT VIOLET (5G)", "color": "COBALT VIOLET", "storage": "256GB", "qty": 1, "set_price": 46900, "brand": "Samsung", "category": "Smartphone", "hex": "5C4F9E", "fg": "F5F5F5"}, {"barcode": "8806097921790", "name": "Samsung Galaxy A07 (6+128 GB) Black (5G)", "model": "Samsung Galaxy A07 (6+128 GB) Black (5G)", "color": "Black", "storage": "128GB", "qty": 4, "set_price": 5999, "brand": "Samsung", "category": "Smartphone", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "8806097921820", "name": "Samsung Galaxy A07 (6+128 GB) Light Violet (5G)", "model": "Samsung Galaxy A07 (6+128 GB) Light Violet (5G)", "color": "Light Violet", "storage": "128GB", "qty": 2, "set_price": 5999, "brand": "Samsung", "category": "Smartphone", "hex": "A78BFA", "fg": "111111"}, {"barcode": "8806099047948", "name": "Samsung Galaxy A57 (12+512) Violet (5G)", "model": "Samsung Galaxy A57 (12+512) Violet (5G)", "color": "Violet", "storage": "512GB", "qty": 2, "set_price": 20999, "brand": "Samsung", "category": "Smartphone", "hex": "7C3AED", "fg": "F5F5F5"}, {"barcode": "8806099047955", "name": "Samsung Galaxy A57 (12+512) Dark Blue (5G)", "model": "Samsung Galaxy A57 (12+512) Dark Blue (5G)", "color": "Dark Blue", "storage": "512GB", "qty": 2, "set_price": 20999, "brand": "Samsung", "category": "Smartphone", "hex": "1E3A8A", "fg": "F5F5F5"}, {"barcode": "8806099048068", "name": "Samsung Galaxy A57 (12+256) Violet (5G)", "model": "Samsung Galaxy A57 (12+256) Violet (5G)", "color": "Violet", "storage": "256GB", "qty": 2, "set_price": 17999, "brand": "Samsung", "category": "Smartphone", "hex": "7C3AED", "fg": "F5F5F5"}, {"barcode": "8806099048075", "name": "Samsung Galaxy A57 (12+256) Dark blue (5G)", "model": "Samsung Galaxy A57 (12+256) Dark blue (5G)", "color": "Dark blue", "storage": "256GB", "qty": 3, "set_price": 17999, "brand": "Samsung", "category": "Smartphone", "hex": "1E3A8A", "fg": "F5F5F5"}, {"barcode": "8806099048426", "name": "Samsung Galaxy A57 (12+512) Gray (5G)", "model": "Samsung Galaxy A57 (12+512) Gray (5G)", "color": "Gray", "storage": "512GB", "qty": 2, "set_price": 20999, "brand": "Samsung", "category": "Smartphone", "hex": "808080", "fg": "111111"}, {"barcode": "8806099048501", "name": "Samsung Galaxy A57 (12+256) Gray (5G)", "model": "Samsung Galaxy A57 (12+256) Gray (5G)", "color": "Gray", "storage": "256GB", "qty": 2, "set_price": 17999, "brand": "Samsung", "category": "Smartphone", "hex": "808080", "fg": "111111"}, {"barcode": "8806099058388", "name": "Samsung Galaxy A37 (8+256) Light Violet  (5G)", "model": "Samsung Galaxy A37 (8+256) Light Violet  (5G)", "color": "Light Violet", "storage": "256GB", "qty": 1, "set_price": 13999, "brand": "Samsung", "category": "Smartphone", "hex": "A78BFA", "fg": "111111"}, {"barcode": "6932554433291", "name": "Xiaomi Redmi Pad 2 LTE (4+128) Graphite Gray", "model": "Xiaomi Redmi Pad 2 LTE (4+128) Graphite Gray", "color": "Gray", "storage": "128GB", "qty": 1, "set_price": 6499, "brand": "Xiaomi", "category": "Tablet", "hex": "808080", "fg": "111111"}, {"barcode": "6932554472818", "name": "Xiaomi Pad 8 Wi-Fi (8+128) Pine Green", "model": "Xiaomi Pad 8 Wi-Fi (8+128) Pine Green", "color": "Pine Green", "storage": "128GB", "qty": 1, "set_price": 12990, "brand": "Xiaomi", "category": "Tablet", "hex": "16A34A", "fg": "F5F5F5"}, {"barcode": "6932554472870", "name": "Xiaomi Pad 8 Wi-Fi (8+256) Grey", "model": "Xiaomi Pad 8 Wi-Fi (8+256) Grey", "color": "Grey", "storage": "", "qty": 1, "set_price": 16990, "brand": "Xiaomi", "category": "Tablet", "hex": "808080", "fg": "111111"}, {"barcode": "6936520869770", "name": "Honor Pad 10 Wi-Fi (8+256GB) Grey", "model": "Honor Pad 10 Wi-Fi (8+256GB) Grey", "color": "Grey", "storage": "256GB", "qty": 1, "set_price": 13990, "brand": "Honor", "category": "Tablet", "hex": "808080", "fg": "111111"}, {"barcode": "6936520874491", "name": "Honor Pad 10 LTE (8+256GB) Grey", "model": "Honor Pad 10 LTE (8+256GB) Grey", "color": "Grey", "storage": "", "qty": 1, "set_price": 15990, "brand": "Honor", "category": "Tablet", "hex": "808080", "fg": "111111"}, {"barcode": "6939093007563", "name": "Xiaomi Redmi Pad 2 Wi-Fi 9.7 (4+64) Graphite Gray", "model": "Xiaomi Redmi Pad 2 Wi-Fi 9.7 (4+64) Graphite Gray", "color": "Gray", "storage": "", "qty": 1, "set_price": 4999, "brand": "Xiaomi", "category": "Tablet", "hex": "808080", "fg": "111111"}, {"barcode": "6939093007693", "name": "Xiaomi Redmi Pad 2 Wi-Fi 9.7 (4+64) Silver", "model": "Xiaomi Redmi Pad 2 Wi-Fi 9.7 (4+64) Silver", "color": "Silver", "storage": "", "qty": 1, "set_price": 4999, "brand": "Xiaomi", "category": "Tablet", "hex": "C0C0C0", "fg": "111111"}, {"barcode": "6939093013328", "name": "Xiaomi Redmi Pad 2 LTE 9.7 (4+64) Graphite Gray", "model": "Xiaomi Redmi Pad 2 LTE 9.7 (4+64) Graphite Gray", "color": "Gray", "storage": "", "qty": 1, "set_price": 5499, "brand": "Xiaomi", "category": "Tablet", "hex": "808080", "fg": "111111"}, {"barcode": "6939093013342", "name": "Xiaomi Redmi Pad 2 LTE 9.7 (4+128) Graphite Gray", "model": "Xiaomi Redmi Pad 2 LTE 9.7 (4+128) Graphite Gray", "color": "Gray", "storage": "", "qty": 1, "set_price": 5999, "brand": "Xiaomi", "category": "Tablet", "hex": "808080", "fg": "111111"}, {"barcode": "8806097658115", "name": "Samsung Galaxy Tab S10 Lite Wi-Fi (6+128GB) Gray", "model": "Samsung Galaxy Tab S10 Lite Wi-Fi (6+128GB) Gray", "color": "Gray", "storage": "128GB", "qty": 2, "set_price": 12990, "brand": "Samsung", "category": "Tablet", "hex": "808080", "fg": "111111"}, {"barcode": "8806097804055", "name": "Samsung Galaxy Tab A11 LTE (8+128GB) Gray", "model": "Samsung Galaxy Tab A11 LTE (8+128GB) Gray", "color": "Gray", "storage": "128GB", "qty": 1, "set_price": 7490, "brand": "Samsung", "category": "Tablet", "hex": "808080", "fg": "111111"}, {"barcode": "8806097877714", "name": "Samsung Galaxy Tab A11+ Wi-Fi (6+128GB) Gray", "model": "Samsung Galaxy Tab A11+ Wi-Fi (6+128GB) Gray", "color": "Gray", "storage": "128GB", "qty": 2, "set_price": 8490, "brand": "Samsung", "category": "Tablet", "hex": "808080", "fg": "111111"}, {"barcode": "199271111741", "name": "Lenovo IdeaPad Slim 3 15ARP10-83K7009GTA Grey (A)", "model": "Lenovo IdeaPad Slim 3 15ARP10-83K7009GTA Grey (A)", "color": "", "storage": "", "qty": 1, "set_price": 19990, "brand": "Lenovo", "category": "Notebook", "hex": "808080", "fg": "111111"}, {"barcode": "199272201823", "name": "Lenovo IdeaPad Slim 3 15AMN8-82XQ00T4TA Grey (A)", "model": "Lenovo IdeaPad Slim 3 15AMN8-82XQ00T4TA Grey (A)", "color": "", "storage": "", "qty": 1, "set_price": 19990, "brand": "Lenovo", "category": "Notebook", "hex": "808080", "fg": "111111"}, {"barcode": "199272920007", "name": "Lenovo IdeaPad Slim 3i 15IRH10-83K100UXTA Grey", "model": "Lenovo IdeaPad Slim 3i 15IRH10-83K100UXTA Grey", "color": "", "storage": "", "qty": 2, "set_price": 22990, "brand": "Lenovo", "category": "Notebook", "hex": "808080", "fg": "111111"}, {"barcode": "199272920014", "name": "Lenovo IdeaPad Slim 3i 15IRH10-83K100UYTA Grey", "model": "Lenovo IdeaPad Slim 3i 15IRH10-83K100UYTA Grey", "color": "", "storage": "", "qty": 2, "set_price": 18990, "brand": "Lenovo", "category": "Notebook", "hex": "808080", "fg": "111111"}, {"barcode": "199764051233", "name": "HP OmniBook 3 NG AI 15-fn0076AU Silver (A)", "model": "HP OmniBook 3 NG AI 15-fn0076AU Silver (A)", "color": "", "storage": "", "qty": 1, "set_price": 24990, "brand": "HP", "category": "Notebook", "hex": "C0C0C0", "fg": "111111"}, {"barcode": "199764115928", "name": "HP OmniBook 3 NG AI 15-fn0077AU Silver (A)", "model": "HP OmniBook 3 NG AI 15-fn0077AU Silver (A)", "color": "", "storage": "", "qty": 1, "set_price": 24990, "brand": "HP", "category": "Notebook", "hex": "C0C0C0", "fg": "111111"}, {"barcode": "4711387863848", "name": "Asus Vivobook 16 X1607CA-MB535WA Blue", "model": "Asus Vivobook 16 X1607CA-MB535WA Blue", "color": "", "storage": "", "qty": 2, "set_price": 24990, "brand": "Asus", "category": "Notebook", "hex": "2550A0", "fg": "F5F5F5"}, {"barcode": "4711474897008", "name": "Acer Aspire Lite 15 AL15-46P-R77X_Silver (A)", "model": "Acer Aspire Lite 15 AL15-46P-R77X_Silver (A)", "color": "", "storage": "", "qty": 1, "set_price": 12990, "brand": "Acer", "category": "Notebook", "hex": "C0C0C0", "fg": "111111"}, {"barcode": "4711474946195", "name": "Acer Aspire Lite 15 AL15-54P-56RK_Silver", "model": "Acer Aspire Lite 15 AL15-54P-56RK_Silver", "color": "", "storage": "", "qty": 1, "set_price": 19990, "brand": "Acer", "category": "Notebook", "hex": "C0C0C0", "fg": "111111"}, {"barcode": "4711636091718", "name": "Asus Gaming V16 V3607VH-RP521W Black", "model": "Asus Gaming V16 V3607VH-RP521W Black", "color": "", "storage": "", "qty": 1, "set_price": 37990, "brand": "Asus", "category": "Notebook", "hex": "111111", "fg": "F5F5F5"}, {"barcode": "4711636296250", "name": "Asus Vivobook 15 X1502VA-BQ523WA Silver", "model": "Asus Vivobook 15 X1502VA-BQ523WA Silver", "color": "", "storage": "", "qty": 1, "set_price": 20990, "brand": "Asus", "category": "Notebook", "hex": "C0C0C0", "fg": "111111"}, {"barcode": "4711636338097", "name": "Asus Vivobook 15 X1504VA-BQ5047WA Blue", "model": "Asus Vivobook 15 X1504VA-BQ5047WA Blue", "color": "", "storage": "", "qty": 1, "set_price": 20990, "brand": "Asus", "category": "Notebook", "hex": "2550A0", "fg": "F5F5F5"}, {"barcode": "4711636396004", "name": "Asus TUF Gaming A15 FA506NCQ-HN013W Balck (A)", "model": "Asus TUF Gaming A15 FA506NCQ-HN013W Balck (A)", "color": "", "storage": "", "qty": 1, "set_price": 27990, "brand": "Asus", "category": "Notebook", "hex": "555555", "fg": "F5F5F5"}];
+let BRANDS = ["Acer", "Apple", "Asus", "HP", "Honor", "Infinix", "Iqoo", "Lenovo", "Oppo", "Realme", "Samsung", "Vivo", "Xiaomi", "Zte"];
+const CATS = ["iPhone", "iPad", "Apple Watch", "Smartphone", "Tablet", "Notebook"];
+
+let aF="all", aFtype="all", aS="all", sK=null, sD=1;
+let isAdmin=false, changes={}, _fbDb=null, _fbRef=null, _fbUpdate=null;
+
+const filterRow = document.getElementById("filterRow");
+let SM_BRANDS = [];
+let filterItems = [];
+
+function rebuildFilters(){
+  SM_BRANDS = [...new Set(DATA.filter(d=>d.category==='Smartphone').map(d=>d.brand).filter(Boolean))].sort();
+  filterItems = [
+    {id:"all",         label:"ทั้งหมด",     type:"all"},
+    {id:"iPhone",      label:"iPhone",      type:"cat"},
+    {id:"iPad",        label:"iPad",        type:"cat"},
+    {id:"Apple Watch", label:"Apple Watch", type:"cat"},
+    {id:"Tablet",      label:"Tablet",      type:"cat"},
+    {id:"Notebook",    label:"Notebook",    type:"cat"},
+    ...SM_BRANDS.map(b=>({id:b, label:b, type:"brand"})),
+  ];
+
+  filterRow.innerHTML = '';
+  filterItems.forEach(f=>{
+    const btn  = document.createElement("button");
+    btn.className = "bf" + (f.id===aF ? " on" : "");
+
+    let count;
+    if(f.type==="all")      count = DATA.reduce((a,d)=>a+d.qty,0);
+    else if(f.type==="cat") count = DATA.filter(d=>d.category===f.id).reduce((a,d)=>a+d.qty,0);
+    else                    count = DATA.filter(d=>d.brand===f.id).reduce((a,d)=>a+d.qty,0);
+
+    btn.innerHTML = `<span>${f.label}</span><span class="bn">${count}</span>`;
+    btn.onclick = ()=>{
+      filterRow.querySelectorAll(".bf").forEach(x=>x.classList.remove("on"));
+      btn.classList.add("on");
+      aF=f.id; aFtype=f.type;
+      render();
+    };
+    filterRow.appendChild(btn);
+  });
+}
+rebuildFilters();
+
+
+
+function doSort(k){ if(sK===k) sD*=-1; else{sK=k;sD=1;} render(); }
+function qc(v){ return v<=2?"low":"ok"; }
+
+function render(){
+  const q=document.getElementById("q").value.toLowerCase();
+  let rows=DATA.filter(d=>{
+    if(aF!=="all"){
+      if(aFtype==="cat"   && d.category!==aF) return false;
+      if(aFtype==="brand" && d.brand!==aF)    return false;
+    }
+    if(!isAdmin && d.qty===0) return false;
+    if(aS==="low" && !(d.qty>=1&&d.qty<=2)) return false;
+    if(aS==="ok"  && d.qty<3) return false;
+    if(q && !(d.name.toLowerCase().includes(q)||d.barcode.includes(q)||(d.color||'').toLowerCase().includes(q))) return false;
+    return true;
+  });
+
+  // ── จัดกลุ่มตามรุ่น (Option C) ──
+  const groups={};
+  rows.forEach(d=>{
+    const key=mdlKey(d);
+    if(!groups[key]){
+      groups[key]={model:d.model||key, modelName:key, category:d.category, brand:d.brand,
+                   price:d.set_price||0, storage:d.storage||'', variants:[]};
+    }
+    groups[key].variants.push(d);
+    // ใช้ราคาต่ำสุดเป็นราคาแสดง ถ้ายังไม่ตั้ง
+    if(d.set_price && (!groups[key].price || d.set_price<groups[key].price)) groups[key].price=d.set_price;
+    if(!groups[key].storage && d.storage) groups[key].storage=d.storage;
+  });
+
+  let list=Object.values(groups);
+  list.forEach(g=>{ g.totalQty=g.variants.reduce((s,v)=>s+v.qty,0); });
+
+  // sort กลุ่ม
+  if(sK==="qty") list.sort((a,b)=>(a.totalQty-b.totalQty)*sD);
+  else list.sort((a,b)=>{ const pd=(a.price||0)-(b.price||0); return pd!==0?pd:a.modelName.localeCompare(b.modelName); });
+
+  // sort variants ในกลุ่ม (จำนวนมากก่อน)
+  list.forEach(g=>g.variants.sort((a,b)=>b.qty-a.qty));
+
+  document.getElementById("rbar").textContent="แสดง "+list.length+" รุ่น ("+rows.length+" รายการ)";
+  const el=document.getElementById("list");
+  if(!list.length){el.innerHTML='<div class="empty">ไม่พบสินค้า</div>';return;}
+
+  el.innerHTML=list.map(g=>mdlCard(g)).join("");
+}
+
+// ── helper: key สำหรับจัดกลุ่ม (ตัดสีออกจากชื่อรุ่น) ──
+function mdlKey(d){
+  let m=(d.model||d.name||'').replace(/^BS@\s*/i,'').replace(/\s*F\+\s*$/i,'').trim();
+
+  // Apple Watch: ชื่อยาวมาก ตัดเหลือ "Apple Watch [รุ่น] [ขนาด] [S/M หรือ M/L]"
+  if(d.category==='Apple Watch'){
+    const w=(d.name||'').match(/(Apple Watch .+?\d+mm).*?(- ?[SM]\/[ML])\s*$/i);
+    if(w) return w[1].trim()+' '+w[2].replace(/-\s?/,'');
+    // ถ้าไม่มี S/M ก็ตัดแค่ส่วน Case เป็นต้นไป
+    const w2=(d.name||'').match(/(Apple Watch .+?\d+mm)/i);
+    if(w2) return w2[1].trim();
+  }
+
+  const color=(d.color||'').trim();
+  // ตัดชื่อสีออกจากท้าย model เพื่อให้รุ่นเดียวกัน (หลายสี) จับกลุ่มได้
+  if(color && m.toLowerCase().endsWith(color.toLowerCase())){
+    m=m.slice(0, m.length-color.length).trim();
+  }
+  return m || d.name;
+}
+
+// ── helper: สร้างการ์ดรุ่น ──
+function mdlCard(g){
+  const totCls = g.totalQty===0?'total-zero':(g.totalQty<=2?'total-low':'total-ok');
+  const cardCls = '';
+  const sub=[];
+  if(g.price) sub.push(g.price.toLocaleString()+'฿');
+  if(g.storage) sub.push(g.storage);
+  sub.push(g.variants.length+' สี');
+  if(g.brand) sub.push(g.brand);
+
+  return `<div class="mcard ${cardCls}">
+    <div class="mhead">
+      <div class="minfo">
+        <div class="mname">${esc(g.modelName)}</div>
+        <div class="msub">${sub.join(' · ')}</div>
+      </div>
+      <div class="mtotal ${totCls}">${g.totalQty} ชิ้น</div>
+    </div>
+    <div class="crow">
+      ${g.variants.map(v=>vChip(v,g)).join('')}
+    </div>
+  </div>`;
+}
+
+// ── helper: chip สีแต่ละ variant ──
+function vChip(v,g){
+  const qcls=v.qty===0?'zero':(v.qty<=2?'low':'ok');
+  const label=v.color||v.storage||'—';
+  const gUrl='https://www.google.com/search?q='+encodeURIComponent((g.modelName+' '+(v.color||'')).trim())+'&udm=2';
+  const bcEsc=v.barcode.replace(/'/g,"\\'");
+
+  if(isAdmin){
+    // โหมด admin: แสดงเหมือนโหมดดู แต่เห็น qty=0 ด้วย (ปรับจำนวนผ่านสแกนเท่านั้น)
+    return `<span class="cchip ${v.qty===0?'zero':''}${changes[v.barcode]!==undefined?' changed':''}">
+      <a class="cchip-link" href="${gUrl}" target="_blank" rel="noopener" title="ดูสี ${esc(v.color)} ใน Google Images">
+        <span class="cdot" style="background:#${v.hex}"></span>
+        <span class="cname">${esc(label)}</span>
+      </a>
+      <button class="cqty-btn ${qcls}" onclick="copyName('${bcEsc}')" title="คลิกคัดลอกเลข Product (${v.barcode})">${v.qty}</button>
+    </span>`;
+  }
+  return `<span class="cchip ${v.qty===0?'zero':''}">
+    <a class="cchip-link" href="${gUrl}" target="_blank" rel="noopener" title="ดูสี ${esc(v.color)} ใน Google Images">
+      <span class="cdot" style="background:#${v.hex}"></span>
+      <span class="cname">${esc(label)}</span>
+    </a>
+    <button class="cqty-btn ${qcls}" onclick="copyName('${bcEsc}')" title="คลิกคัดลอกเลข Product (${v.barcode})">${v.qty}</button>
+  </span>`;
+}
+function esc(s){ return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function tick(){
+  const n=new Date();
+  document.getElementById("clk").textContent=
+    n.toLocaleDateString("th-TH",{year:"numeric",month:"short",day:"numeric"})+" "+
+    n.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"});
+}
+tick(); setInterval(tick,30000);
+render();
+
+function copyName(code) {
+  const t = document.getElementById('toast');
+  const show = (msg) => {
+    t.textContent = '📋 คัดลอกเลข Product: ' + msg;
+    t.classList.add('show');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+  };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(()=>show(code)).catch(()=>fallback(code,show));
+  } else { fallback(code,show); }
+}
+function fallback(code, show) {
+  const ta = document.createElement('textarea');
+  ta.value = code; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try { document.execCommand('copy'); show(code); } catch(e) { show('ไม่สามารถคัดลอกได้'); }
+  document.body.removeChild(ta);
+}
+
+// ── Admin / Firebase ──
+const ADMIN_PW = "00895"; // เปลี่ยนรหัสผ่านตรงนี้
+
+function openModal(){
+  document.getElementById('pwInput').value='';
+  document.getElementById('pwErr').textContent='';
+  document.getElementById('overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('pwInput').focus(),100);
+}
+function closeModal(){ document.getElementById('overlay').classList.remove('show'); }
+function checkPw(){
+  if(document.getElementById('pwInput').value===ADMIN_PW){
+    isAdmin=true; changes={};
+    closeModal();
+    // สลับไปหน้า Admin
+    document.getElementById('viewMode').style.display='none';
+    document.getElementById('adminMode').style.display='block';
+    document.getElementById('lockBtn').textContent='🔒 ออก';
+    document.getElementById('lockBtn').onclick=logout;
+    renderChanges();
+    showToast('🔓 เข้าสู่โหมดแก้ไข');
+  } else {
+    document.getElementById('pwErr').textContent='รหัสผ่านไม่ถูกต้อง';
+    document.getElementById('pwInput').value='';
+    document.getElementById('pwInput').focus();
+  }
+}
+document.addEventListener('DOMContentLoaded',function(){var ov=document.getElementById('overlay');if(ov)ov.addEventListener('click',function(e){if(e.target===this)closeModal();});});
+
+function logout(){
+  // ถ้ามีการแก้ที่ยังไม่บันทึก เตือน
+  if(Object.keys(changes).length>0){
+    if(!confirm('มีการแก้ไข '+Object.keys(changes).length+' รายการที่ยังไม่บันทึก ออกเลยไหม?')) return;
+  }
+  Object.keys(changes).forEach(bc=>{
+    const item=DATA.find(d=>d.barcode===bc);
+    if(item&&item._orig!==undefined){item.qty=item._orig;delete item._orig;}
+  });
+  isAdmin=false; changes={};
+  // สลับกลับหน้าดู
+  document.getElementById('adminMode').style.display='none';
+  document.getElementById('viewMode').style.display='block';
+  document.getElementById('lockBtn').textContent='🔒 แก้ไขสต็อก';
+  document.getElementById('lockBtn').onclick=openModal;
+  render(); updateKpi(); buildFilters(); showToast('🔒 ออกจากโหมดแก้ไข');
+}
+
+// แสดงรายการที่แก้ไขในหน้า Admin
+function renderChanges(){
+  const list=document.getElementById('achList');
+  const keys=Object.keys(changes);
+  document.getElementById('achCount').textContent=keys.length;
+  document.getElementById('saveBtn').disabled = keys.length===0;
+  if(!keys.length){
+    list.innerHTML='<div class="ach-empty">ยังไม่มีการแก้ไข — สแกนเพื่อเริ่ม</div>';
+    return;
+  }
+  list.innerHTML=keys.map(bc=>{
+    const item=DATA.find(d=>d.barcode===bc);
+    if(!item) return '';
+    const orig=item._orig!==undefined?item._orig:item.qty;
+    const delta=changes[bc]-orig;
+    const isNew=orig===0 && item._isNew;
+    const nm=item.name+(item.color?' '+item.color:'');
+    let deltaTxt;
+    if(delta>0) deltaTxt='<span class="ach-delta up">+'+delta+' → '+changes[bc]+'</span>';
+    else if(delta<0) deltaTxt='<span class="ach-delta down">'+delta+' → '+changes[bc]+'</span>';
+    else deltaTxt='<span class="ach-delta">= '+changes[bc]+'</span>';
+    return '<div class="ach-item"><span class="ach-name">'+escHtml(nm)+(isNew?'<span class="ach-new">ใหม่</span>':'')+'</span>'+deltaTxt+'</div>';
+  }).join('');
+}
+
+async function saveAll(){
+  // รอ Firebase พร้อม (max 5s)
+  if(!window._fbDb || !window._fbRef || !window._fbUpdate) {
+    let wait = 0;
+    await new Promise(res => {
+      const t = setInterval(()=>{ wait+=200;
+        if(window._fbDb && window._fbRef && window._fbUpdate){ clearInterval(t); res(); }
+        else if(wait>=5000){ clearInterval(t); res(); }
+      }, 200);
+    });
+  }
+  if(!window._fbUpdate||!window._fbRef||!window._fbDb){showToast('ยังไม่ได้เชื่อมต่อ Firebase','err');return;}
+  _fbDb=window._fbDb; _fbRef=window._fbRef; _fbUpdate=window._fbUpdate;
+  if(Object.keys(changes).length===0) return;
+  document.getElementById('saveBtn').disabled=true;
+  document.getElementById('saveBtn').textContent='⏳ กำลังบันทึก...';
+  try{
+    await _fbUpdate(_fbRef(_fbDb,'stock'), changes);
+    // เขียน products สำหรับสินค้าใหม่ (ที่เพิ่มผ่านฟอร์ม)
+    const prodUpdate={};
+    Object.keys(changes).forEach(bc=>{
+      const d=DATA.find(x=>x.barcode===bc);
+      if(d && d._isNew){
+        prodUpdate[bc]={name:d.name,set_price:d.set_price,brand:d.brand,model:d.model||d.name,
+          color:d.color,storage:d.storage||'',category:d.category,hex:d.hex,fg:d.fg};
+      }
+    });
+    if(Object.keys(prodUpdate).length>0){
+      await _fbUpdate(_fbRef(_fbDb,'products'), prodUpdate);
+    }
+    DATA.forEach(d=>{if(d._orig!==undefined)delete d._orig; if(d._isNew)delete d._isNew;});
+    showToast('💾 บันทึกสำเร็จ '+Object.keys(changes).length+' รายการ');
+    changes={}; document.getElementById('saveBtn').textContent='💾 บันทึก'; logout();
+  }catch(e){
+    showToast('❌ บันทึกไม่สำเร็จ: '+e.message,'err');
+    document.getElementById('saveBtn').disabled=false;
+    document.getElementById('saveBtn').textContent='💾 บันทึก';
+  }
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = type==='err' ? '#EF4444' : 'var(--p)';
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+function updateKpi() {
+  BRANDS = [...new Set(DATA.map(d=>d.brand).filter(Boolean))];
+}
+
+function openAddModal(){
+  ['ap_barcode','ap_name','ap_price','ap_qty'].forEach(id=>{document.getElementById(id).value='';});
+  document.getElementById('ap_qty').value='1';
+  document.getElementById('ap_category').value='';
+  document.getElementById('apErr').textContent='';
+  document.getElementById('apPreviewBox').style.display='none';
+  document.getElementById('addOverlay').classList.add('show');
+}
+function closeAddModal(){ document.getElementById('addOverlay').classList.remove('show'); }
+document.addEventListener('DOMContentLoaded',function(){
+  var ao=document.getElementById('addOverlay');
+  if(ao) ao.addEventListener('click',function(e){if(e.target===this)closeAddModal();});
+});
+// ── ตารางสีสำหรับเดา hex (โหมดเพิ่มสินค้า) ──
+const AP_COLOR_HEX = {"jet black":"050505","space black":"1a1a1c","midnight":"1c2526","black":"111111","starlight":"f2efe7","silver":"c0c0c0","white":"f5f5f7","sky blue":"38bdf8","ocean blue":"1a6ea8","mist blue":"5b8db8","ultramarine":"3730a3","deep blue":"1e3a8a","sapphire blue":"1b4f8a","titanium blue":"385f8c","navy":"1e3a5f","blue":"2550a0","rose gold":"b8936a","sakura pink":"f9a8c9","pink":"e8748a","cosmic orange":"ff4500","blazing orange":"ea580c","orange":"d4753a","aurora gold":"d4af37","titanium gold":"b7860b","gold":"d4af37","plum purple":"6b2f8a","lavender":"c084fc","violet":"7c3aed","purple":"5e3a8c","jade green":"15803d","mint green":"3eb489","pine green":"16a34a","teal":"0d9488","green":"16a34a","space grey":"6b7280","space gray":"6b7280","titanium grey":"7a7d82","gray":"808080","grey":"808080","mocha brown":"7d553a","brown":"7a5a3a","red":"dc2626","yellow":"e8c34a","cyan":"0891b2","titanium":"b8c0c8","desert titanium":"c4a484","natural titanium":"c0bdb4"};
+const AP_KEYS = Object.keys(AP_COLOR_HEX).sort((a,b)=>b.length-a.length);
+
+function apGuessColor(name){
+  const n=(name||'').toLowerCase();
+  for(const k of AP_KEYS){ if(n.includes(k)) return k.replace(/\b\w/g,c=>c.toUpperCase()); }
+  return '';
+}
+function apGuessHex(color){
+  const c=(color||'').toLowerCase().trim();
+  if(AP_COLOR_HEX[c]) return AP_COLOR_HEX[c];
+  for(const k of AP_KEYS){ if(c.includes(k)) return AP_COLOR_HEX[k]; }
+  return '808080';
+}
+function apGuessStorage(name){
+  const m=(name||'').match(/(\d+)\s*(GB|TB)/i);
+  return m?(m[1]+m[2].toUpperCase()):'';
+}
+function apGuessBrand(name){
+  const n=(name||'').toLowerCase();
+  for(const b of BRANDS){ if(n.includes(b.toLowerCase())) return b; }
+  return '';
+}
+
+// preview แบบ realtime ขณะพิมพ์ชื่อ
+function apPreview(){
+  const name=document.getElementById('ap_name').value.trim();
+  const box=document.getElementById('apPreviewBox');
+  if(!name){ box.style.display='none'; return; }
+  const color=apGuessColor(name);
+  const storage=apGuessStorage(name);
+  const brand=apGuessBrand(name);
+  const hex=apGuessHex(color);
+  box.style.display='block';
+  document.getElementById('apPvDot').style.background='#'+hex;
+  document.getElementById('apPvColor').textContent=color||'(ไม่พบ)';
+  document.getElementById('apPvStorage').textContent=storage||'(ไม่พบ)';
+  document.getElementById('apPvBrand').textContent=brand||'(ไม่พบ)';
+}
+
+function submitAddProduct(){
+  const barcode = document.getElementById('ap_barcode').value.trim();
+  const name    = document.getElementById('ap_name').value.trim();
+  const price   = parseInt(document.getElementById('ap_price').value)||0;
+  const qty     = parseInt(document.getElementById('ap_qty').value)||0;
+  const cat     = document.getElementById('ap_category').value;
+  if(!barcode||!name||!cat){document.getElementById('apErr').textContent='กรุณากรอก Barcode, ชื่อสินค้า และ หมวดหมู่';return;}
+  if(DATA.find(d=>d.barcode===barcode)){document.getElementById('apErr').textContent='Barcode นี้มีอยู่แล้วในระบบ';return;}
+
+  // เดาอัตโนมัติจากชื่อ
+  const color   = apGuessColor(name);
+  const storage = apGuessStorage(name);
+  const brand   = apGuessBrand(name) || 'Apple';
+  const hex     = apGuessHex(color);
+  const fg      = parseInt(hex,16)>0x888888 ? '111111' : 'F5F5F5';
+
+  const newItem = {
+    barcode, name, model:name,
+    color, storage, qty, set_price:price,
+    brand, category:cat, hex, fg,
+    _orig:0, _isNew:true
+  };
+  DATA.push(newItem);
+  changes[barcode] = qty;
+  closeAddModal();
+  renderChanges();
+  showToast('✅ เพิ่ม '+name+' แล้ว (กด 💾 บันทึก)');
+}
+
+// ════════════════════════════════════════════════
+//  SCANNER เพิ่ม/ลบ (สแกน barcode)
+// ════════════════════════════════════════════════
+let scanMode = 'add';   // 'add' | 'del'
+let scanner = null;
+let scanArmed = true;   // สแกนได้เมื่อ true เท่านั้น (1 ครั้งต่อการ arm)
+let lastScanTime = 0;
+let lastScanCode = '';
+
+window.openScanMode = function(mode){
+  scanMode = mode;
+  const isAdd = mode==='add';
+  document.getElementById('scanTitle').textContent = isAdd ? '📷 สแกนเพิ่มสินค้า' : '📷 สแกนลบสินค้า';
+  document.getElementById('scanHint').textContent  = isAdd ? 'ยิงบาร์โค้ดเพื่อ +1 (ของเข้า)' : 'ยิงบาร์โค้ดเพื่อ −1 (ขายออก)';
+  document.getElementById('scanHint').style.color  = isAdd ? 'var(--green)' : 'var(--red)';
+  document.getElementById('scanRecent').innerHTML = '';
+  document.getElementById('scanStatus').textContent = 'กำลังเปิดกล้อง...';
+  document.getElementById('scanStatus').className = 'scan-status';
+  document.getElementById('scanAgainBtn').style.display = 'none';
+  document.getElementById('scanOverlay').classList.add('show');
+  scanArmed = true;   // พร้อมสแกน 1 ครั้ง
+  startScanner();
+};
+
+// กดเพื่อให้สแกนได้อีก 1 ครั้ง
+window.armScan = function(){
+  scanArmed = true;
+  lastScanCode = '';
+  const isAdd = scanMode==='add';
+  document.getElementById('scanStatus').className = 'scan-status';
+  document.getElementById('scanStatus').textContent = '🎯 เล็งบาร์โค้ดให้อยู่ในกรอบ';
+  document.getElementById('scanAgainBtn').style.display = 'none';
+  document.querySelector('.scan-line').style.opacity = '1';
+};
+
+window.closeScanMode = async function(){
+  document.getElementById('scanOverlay').classList.remove('show');
+  if(scanner){ try{ await scanner.stop(); }catch(e){} }
+};
+
+async function startScanner(){
+  if(typeof window.Html5Qrcode === 'undefined'){
+    document.getElementById('scanStatus').className = 'scan-status err';
+    document.getElementById('scanStatus').textContent = '❌ โหลดกล้องไม่ได้ ลอง refresh';
+    return;
+  }
+  try{
+    if(!scanner) scanner = new window.Html5Qrcode("scanReader");
+    await scanner.start(
+      { facingMode:"environment" },
+      { fps:10, qrbox:{width:250,height:140} },
+      onScan,
+      ()=>{}
+    );
+    document.getElementById('scanStatus').textContent = '🎯 เล็งบาร์โค้ดให้อยู่ในกรอบ';
+    // เช็คว่ากล้องซูมได้ไหม
+    setTimeout(setupZoom, 600);
+  }catch(err){
+    document.getElementById('scanStatus').className = 'scan-status err';
+    document.getElementById('scanStatus').textContent = '❌ '+(err.message||err);
+  }
+}
+
+// ── ซูมกล้อง x1/x2/x3 ──
+let zoomCap = null;  // {min,max,feature}
+function setupZoom(){
+  try{
+    const caps = scanner.getRunningTrackCameraCapabilities();
+    const zoom = caps && caps.zoomFeature && caps.zoomFeature();
+    if(zoom && zoom.isSupported && zoom.isSupported()){
+      zoomCap = {min:zoom.min(), max:zoom.max(), feature:zoom};
+      document.getElementById('zoomBar').style.display = 'flex';
+      // reset เป็น x1
+      document.querySelectorAll('.zoom-x').forEach(b=>b.classList.toggle('on', b.dataset.z==='1'));
+    } else {
+      document.getElementById('zoomBar').style.display = 'none';
+    }
+  }catch(e){
+    document.getElementById('zoomBar').style.display = 'none';
+  }
+}
+window.zoomPreset = function(level){
+  if(!zoomCap) return;
+  // map x1/x2/x3 → ค่าจริงของกล้อง (clamp ใน min-max)
+  let v = level;
+  if(level > zoomCap.max) v = zoomCap.max;
+  if(v < zoomCap.min) v = zoomCap.min;
+  try{ zoomCap.feature.apply(v); }catch(e){
+    try{ scanner.applyVideoConstraints({advanced:[{zoom:v}]}); }catch(e2){}
+  }
+  document.querySelectorAll('.zoom-x').forEach(b=>b.classList.toggle('on', parseInt(b.dataset.z)===level));
+};
+
+function onScan(decoded){
+  // สแกนได้เฉพาะตอน armed (1 ครั้งต่อการกด)
+  if(!scanArmed) return;
+  const code = String(decoded).trim();
+  if(!code) return;
+
+  // ยิงสำเร็จ → ปิดการสแกนทันที (กันเบิ้ล)
+  scanArmed = false;
+  lastScanCode = code; lastScanTime = Date.now();
+
+  if(navigator.vibrate) navigator.vibrate(40);
+
+  // หยุดเส้นเล็ง + แสดงปุ่มสแกนต่อ
+  document.querySelector('.scan-line').style.opacity = '0.3';
+  document.getElementById('scanAgainBtn').style.display = 'block';
+
+  // หาในระบบ
+  let item = DATA.find(d=>d.barcode===code);
+  if(!item){
+    const m = DATA.filter(d=>d.barcode.includes(code)||code.includes(d.barcode));
+    if(m.length===1) item = m[0];
+  }
+
+  if(scanMode==='add'){
+    if(item){ scanAdjust(item, +1); }
+    else { scanNewProduct(code); }
+  } else {
+    if(item){
+      if(item.qty<=0){ scanFlash('⚠️ '+item.name+' หมดแล้ว (0)', 'err'); return; }
+      scanAdjust(item, -1);
+    } else {
+      scanFlash('❌ ไม่พบ: '+code, 'err');
+    }
+  }
+}
+
+function scanAdjust(item, delta){
+  if(item._orig===undefined) item._orig = item.qty;  // เก็บค่าเดิมไว้
+  const cur = changes[item.barcode]!==undefined ? changes[item.barcode] : item.qty;
+  const nv = Math.max(0, cur+delta);
+  changes[item.barcode] = nv;
+  item.qty = nv;
+  renderChanges();
+  scanFlash((delta>0?'✓ เพิ่ม +1  ':'✓ ลบ −1  ')+item.name+' = '+nv+' ชิ้น', 'found');
+  addRecent(item.name+(item.color?' '+item.color:''), delta, nv);
+}
+
+function scanNewProduct(code){
+  scanFlash('🆕 สินค้าใหม่ '+code+' — เปิดฟอร์มกรอก', 'found');
+  setTimeout(async ()=>{
+    await closeScanMode();
+    openAddModal();
+    document.getElementById('ap_barcode').value = code;
+    document.getElementById('ap_name').focus();
+  }, 800);
+}
+
+function scanFlash(msg, cls){
+  const s = document.getElementById('scanStatus');
+  s.className = 'scan-status '+(cls||'');
+  s.textContent = msg;
+}
+
+function addRecent(name, delta, nv){
+  const box = document.getElementById('scanRecent');
+  const div = document.createElement('div');
+  div.className = 'scan-rec-item';
+  div.innerHTML = '<span class="scan-rec-name">'+escHtml(name)+'</span>'+
+    '<span class="scan-rec-delta '+(delta>0?'up':'down')+'">'+(delta>0?'+1':'−1')+' → '+nv+'</span>';
+  box.insertBefore(div, box.firstChild);
+  while(box.children.length>20) box.removeChild(box.lastChild);
+}
+function escHtml(s){ return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+// ปิด modal เมื่อกดพื้นหลัง
+document.addEventListener('DOMContentLoaded',function(){
+  var so=document.getElementById('scanOverlay');
+  if(so) so.addEventListener('click',function(e){ if(e.target===this) closeScanMode(); });
+});
+
+function buildFilters() {
+  document.querySelectorAll('.bf').forEach(btn => {
+    const f = filterItems.find(f=>f.label===btn.querySelector('span:first-child').textContent);
+    if(!f) return;
+    let rows = isAdmin ? DATA : DATA.filter(d=>d.qty>0);
+    let count;
+    if(f.type==='all')      count = rows.reduce((a,d)=>a+d.qty,0);
+    else if(f.type==='cat') count = rows.filter(d=>d.category===f.id).reduce((a,d)=>a+d.qty,0);
+    else                    count = rows.filter(d=>d.brand===f.id&&d.category==='Smartphone').reduce((a,d)=>a+d.qty,0);
+    const bn = btn.querySelector('.bn');
+    if(bn) bn.textContent = count;
+  });
+}
+</script>
+<div class="toast" id="toast"></div>
+
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, update, onValue, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+const app = initializeApp({
+  apiKey:"AIzaSyDQjAT16bVpcyUQFyjlQ5Fx9UKyN4wZk5E",
+  authDomain:"stock-bn895.firebaseapp.com",
+  databaseURL:"https://stock-bn895-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"stock-bn895",
+  storageBucket:"stock-bn895.firebasestorage.app",
+  messagingSenderId:"468062725168",
+  appId:"1:468062725168:web:2206f3cafcf955f9fb39f5"
+});
+const db = getDatabase(app);
+window._fbDb=db; window._fbRef=ref; window._fbUpdate=update;
+_fbDb=db; _fbRef=ref; _fbUpdate=update;
+
+// guessHex: เดาสี hex จากชื่อสี (สำหรับสินค้าที่มาจาก Firebase แต่ไม่มี hex)
+function guessHexFB(color, name){
+  const c = (color||name||'').toLowerCase();
+  const map = {
+    'jet black':'050505','space black':'1a1a1c','midnight':'1a1c2e','black':'111111',
+    'starlight':'fbf7eb','silver':'d0d0d2','white':'f5f5f7',
+    'sky blue':'7eb6e0','ocean blue':'1a6ea8','mist blue':'5b8db8','ultramarine':'3730a3',
+    'deep blue':'1e3a8a','sapphire blue':'1b4f8a','aurora blue':'3b7dd8','twilight blue':'2a4f7a',
+    'titanium blue':'385f8c','dark blue':'1e3a8a','glacier blue':'4a90d9','haze blue':'b8d4e8',
+    'feather blue':'6ca0dc','moonlight blue':'2550a0','blue':'2550a0',
+    'rose gold':'b8936a','light blush':'e8b8b8','sakura pink':'f9a8c9','afterglow pink':'f4a0b5','pink':'e8748a',
+    'cosmic orange':'ff4500','blazing orange':'ea580c','orange':'d4753a',
+    'aurora gold':'d4af37','titanium gold':'b7860b','sandy gold':'d4a027','desert gold':'c8960c',
+    'sunrise gold':'d97706','gold':'d4af37',
+    'plum purple':'6b2f8a','lavender purple':'9b59b6','muse purple':'5e3a8c','parrot purple':'7b4fa6',
+    'cobalt violet':'5c4f9e','light violet':'a78bfa','blooming purple':'5e3a8c','dawn purple':'5e3a8c',
+    'lavender':'c084fc','violet':'7c3aed','purple':'5e3a8c',
+    'jade green':'15803d','peacock green':'1a7a6e','mint green':'3eb489','pine green':'16a34a',
+    'sprouting green':'16a34a','palm green':'16a34a','forest owl':'4a6741','green':'16a34a',
+    'space grey':'6b7280','space gray':'6b7280','titanium grey':'7a7d82','meteor silver':'b8bcc4',
+    'graphite gray':'808080','dusk grey':'808080','starlight grey':'f2efe7','gray':'808080','grey':'808080',
+    'mocha brown':'8b6347','cappuccino brown':'6f4e37','stone brown':'8b6347','reddish brown':'92400e','brown':'7a5a3a',
+    'mist titanium':'c8c8d0','titanium':'b8c0c8','teal':'0d9488',
+    'ice white':'f0f4f8','feather white':'f5f5f5','marble white':'f0f0ec','aurora white':'f5f5f5',
+    'glow white':'f5f5f5','white swan':'f5f5f5','ocean cyan':'0891b2','cyan':'0891b2',
+    'summit platinum':'555555','urban silver':'c0c0c0','voyage black':'1a1a1a','velvet black':'1a1a1a',
+    'glowing black':'111111','storm black':'111111','shadow black':'151515','authentic black':'111111',
+    'titanium black':'2c2c2e','cosmic black':'1c1c1e'
+  };
+  for(const k of Object.keys(map)){ if(c.includes(k)) return map[k]; }
+  return '666666';
+}
+
+// Sync indicator helper
+function setSync(ok){
+  document.getElementById('syncDot').style.background = ok ? '#22C55E' : '#EF4444';
+  document.getElementById('syncTxt').textContent = ok ? '🟢 เชื่อมต่อแล้ว' : '🔴 Offline';
+}
+
+// ── ทาง 1.5: ดึง products จาก Firebase ก่อน ถ้ามีให้ใช้แทน DATA ─────
+async function loadFromFirebase(){
+  try{
+    const { get } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js");
+    const pSnap = await get(ref(db,'products'));
+    const products = pSnap.val();
+
+    if(products && Object.keys(products).length > 0){
+      // มี products ใน Firebase → สร้าง DATA ใหม่จาก Firebase (ข้อมูลล่าสุด)
+      const sSnap = await get(ref(db,'stock'));
+      const stock = sSnap.val() || {};
+      const newData = [];
+      Object.keys(products).forEach(bc=>{
+        const p = products[bc];
+        const hex = (p.hex && p.hex.replace('#','')) || guessHexFB(p.color, p.name);
+        const fg = parseInt(hex,16) > 0x888888 ? '111111' : 'F5F5F5';
+        newData.push({
+          barcode: bc,
+          name: p.name || '',
+          model: p.model || p.name || '',
+          color: p.color || '',
+          storage: p.storage || '',
+          qty: stock[bc] !== undefined ? stock[bc] : (p.qty || 0),
+          set_price: p.set_price || 0,
+          brand: p.brand || '',
+          category: p.category || '',
+          hex: hex,
+          fg: fg
+        });
+      });
+      DATA = newData;
+      console.log('✓ โหลดข้อมูลจาก Firebase:', DATA.length, 'รายการ');
+    } else {
+      // Firebase ว่าง → ใช้ DATA เดิมในไฟล์ (fallback)
+      console.log('ℹ️ Firebase ว่าง ใช้ข้อมูลในไฟล์:', DATA.length, 'รายการ');
+    }
+  } catch(err){
+    console.warn('⚠️ ดึง Firebase ไม่ได้ ใช้ข้อมูลในไฟล์:', err.message);
+  }
+  // re-render ด้วยข้อมูลล่าสุด
+  if(typeof rebuildFilters === 'function') rebuildFilters();
+  render(); updateKpi(); buildFilters();
+}
+
+// เรียกครั้งแรกตอนโหลดหน้า
+loadFromFirebase();
+
+// ── Realtime: ฟังการเปลี่ยน stock (qty) ───────────────
+onValue(ref(db,'stock'), snap=>{
+  const fbData=snap.val();
+  if(fbData){
+    DATA.forEach(d=>{ if(!isAdmin && fbData[d.barcode]!==undefined) d.qty=fbData[d.barcode]; });
+  }
+  setSync(true);
+  if(!isAdmin){ render(); updateKpi(); buildFilters(); }
+}, ()=>{
+  setSync(false);
+});
+
+// ════════════════════════════════════════════════
+//  EXCEL UPLOAD (อัปเดต qty + สินค้าใหม่)
+// ════════════════════════════════════════════════
+const COLOR_HEX = {"afterglow pink":"F4A0B5","aurora blue":"3B7DD8","aurora gold":"D4AF37","aurora white":"F5F5F5","black":"111111","blazing orange":"EA580C","blooming purple":"5E3A8C","blue":"2550A0","cappuccino brown":"6F4E37","cobalt violet":"5C4F9E","cosmic black":"1C1C1E","cosmic orange":"FF4500","dark blue":"1E3A8A","dawn purple":"5E3A8C","deep blue":"1E3A8A","desert gold":"C8960C","dusk grey":"808080","feather blue":"6CA0DC","feather purple":"5E3A8C","feather white":"F5F5F5","forest owl":"4A6741","glacier blue":"4A90D9","glowing black":"111111","gray":"808080","green":"16A34A","grey":"808080","haze blue":"B8D4E8","ice white":"F0F4F8","jade green":"15803D","jet black":"111111","lavender":"C084FC","lavender purple":"9B59B6","light violet":"A78BFA","marble white":"F0F0EC","meteor silver":"B8BCC4","midnight":"1C2526","midnight black":"111111","mint green":"3EB489","mist blue":"5B8DB8","mist titanium":"C8C8D0","mocha brown":"8B6347","muse purple":"5E3A8C","ocean blue":"1A6EA8","ocean cyan":"0891B2","parrot purple":"7B4FA6","peacock green":"1A7A6E","pine green":"16A34A","pink":"E8748A","plum purple":"6B2F8A","purple":"5E3A8C","reddish brown":"92400E","rose gold":"B8936A","sakura pink":"F9A8C9","sandy gold":"D4A027","sapphire blue":"1B4F8A","silver":"C0C0C0","sky blue":"38BDF8","space black":"1A1A2E","space grey":"6B7280","sprouting green":"16A34A","starlight":"F2EFE7","stone brown":"8B6347","summit platinum":"555555","sunrise gold":"D97706","teal":"0D9488","titanium":"B8C0C8","titanium black":"2C2C2E","titanium blue":"385F8C","titanium gold":"B7860B","titanium grey":"7A7D82","twilight blue":"2A4F7A","ultramarine":"3730A3","velvet black":"1A1A1A","violet":"7C3AED","voyage black":"1A1A1A","white":"F5F5F5","white swan":"F5F5F5","space gray":"6B7280","graphite gray":"808080","starlight grey":"F2EFE7","gold":"D4AF37","red":"DC2626","orange":"D4753A","yellow":"E8C34A","cyan":"0891B2","brown":"7A5A3A","navy":"1E3A5F"};
+const _hexKeys = Object.keys(COLOR_HEX).sort((a,b)=>b.length-a.length);
+
+function exGuessHex(color, name){
+  const c = (color||'').toLowerCase().trim();
+  if(c && COLOR_HEX[c]) return COLOR_HEX[c];
+  for(const k of _hexKeys){ if(c && c.includes(k)) return COLOR_HEX[k]; }
+  const n = (name||'').toLowerCase();
+  for(const k of _hexKeys){ if(n.includes(k)) return COLOR_HEX[k]; }
+  return '666666';
+}
+function exDeriveColor(name){
+  const n=(name||'').toLowerCase();
+  for(const k of _hexKeys){ if(n.includes(k)) return k.replace(/\b\w/g,c=>c.toUpperCase()); }
+  return '';
+}
+function exDeriveStorage(name){
+  const m=(name||'').match(/(\d+)\s*(GB|TB)/i);
+  return m ? (m[1]+m[2].toUpperCase()) : '';
+}
+
+let exParsed = null;   // parsed excel items
+let exDiff = null;     // {added, changed, zeroed}
+
+function exLog(msg, type=''){
+  const box = document.getElementById('exLog');
+  box.style.display='block';
+  const line = document.createElement('div');
+  line.className = type;
+  line.textContent = `[${new Date().toLocaleTimeString('th-TH')}] ${msg}`;
+  box.appendChild(line); box.scrollTop = box.scrollHeight;
+}
+
+window.openExcelModal = ()=>{
+  document.getElementById('excelOverlay').classList.add('show');
+  exResetModal();
+};
+window.closeExcelModal = ()=>{
+  document.getElementById('excelOverlay').classList.remove('show');
+};
+function exResetModal(){
+  exParsed = null; exDiff = null;
+  document.getElementById('exStats').style.display='none';
+  document.getElementById('exLog').style.display='none';
+  document.getElementById('exLog').innerHTML='';
+  document.getElementById('exTitle').textContent='ลากไฟล์มาวาง หรือคลิกเลือก';
+  document.getElementById('exSub').textContent='รองรับ Stock_*.xlsx';
+  document.getElementById('exFile').value='';
+  document.getElementById('exUpdateBtn').disabled=true;
+}
+
+// close modal on backdrop click
+document.getElementById('excelOverlay').addEventListener('click', function(e){
+  if(e.target===this) closeExcelModal();
+});
+
+// drag & drop
+const exDrop = document.getElementById('exDrop');
+const exFile = document.getElementById('exFile');
+['dragenter','dragover'].forEach(ev=>exDrop.addEventListener(ev,e=>{e.preventDefault();exDrop.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>exDrop.addEventListener(ev,e=>{e.preventDefault();exDrop.classList.remove('over');}));
+exDrop.addEventListener('drop',e=>{ const f=e.dataTransfer.files?.[0]; if(f) exHandleFile(f); });
+exFile.addEventListener('change',e=>{ const f=e.target.files?.[0]; if(f) exHandleFile(f); });
+
+function exParseExcel(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=(e)=>{
+      try{
+        if(typeof XLSX==='undefined'){ reject(new Error('XLSX library ยังไม่โหลด ลอง refresh')); return; }
+        const wb=XLSX.read(e.target.result,{type:'binary'});
+        const items=[];
+        const catMap={'iphone':'iPhone','ipad':'iPad','apple watch':'Apple Watch','smart phone':'Smartphone','smartphone':'Smartphone','tablet':'Tablet','notebook':'Notebook'};
+        wb.SheetNames.forEach(sn=>{
+          const key=sn.toLowerCase().replace(/\s+/g,' ').trim();
+          let category='';
+          for(const k of Object.keys(catMap)){ if(key.startsWith(k)){ category=catMap[k]; break; } }
+          const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:''});
+          rows.forEach(r=>{
+            const barcode=String(r.Product||r.product||'').trim();
+            const name=String(r.Name||r.name||'').trim();
+            const qty=parseInt(r.Number||r.number||0)||0;
+            const price=parseInt(r['Set Price']||r.set_price||r['Min Price']||0)||0;
+            const brand=String(r.Brand||r.brand||'').trim();
+            const model=String(r.Model||r.model||'').trim();
+            let color=String(r.Color||r.color||'').trim();
+            if(!color) color=exDeriveColor(name);
+            let storage=exDeriveStorage(name);
+            if(barcode&&name){ items.push({barcode,name,qty,set_price:price,brand,model,color,storage,category}); }
+          });
+        });
+        resolve(items);
+      }catch(err){ reject(err); }
+    };
+    reader.onerror=()=>reject(new Error('อ่านไฟล์ไม่ได้'));
+    reader.readAsBinaryString(file);
+  });
+}
+
+async function exHandleFile(file){
+  document.getElementById('exLog').innerHTML='';
+  exLog(`📂 ${file.name} (${(file.size/1024).toFixed(1)} KB)`);
+  document.getElementById('exTitle').textContent='⏳ กำลังอ่าน...';
+  try{
+    exParsed = await exParseExcel(file);
+    exLog(`✓ พบ ${exParsed.length} รายการ`,'ok');
+    document.getElementById('exTitle').textContent='✓ '+file.name;
+    document.getElementById('exSub').textContent=exParsed.length+' รายการ';
+
+    // ดึง stock ปัจจุบันจาก Firebase
+    const sSnap = await get(ref(db,'stock'));
+    const curStock = sSnap.val() || {};
+    exLog(`✓ Firebase มี ${Object.keys(curStock).length} barcode`);
+
+    exComputeDiff(curStock);
+    document.getElementById('exStats').style.display='block';
+    document.getElementById('exUpdateBtn').disabled=false;
+  }catch(err){
+    exLog('✗ '+err.message,'err');
+    document.getElementById('exTitle').textContent='ลากไฟล์มาวาง หรือคลิกเลือก';
+    showToast('อ่านไฟล์ไม่สำเร็จ','err');
+  }
+}
+
+function exComputeDiff(curStock){
+  const newBC = new Set(exParsed.map(d=>d.barcode));
+  const oldBC = new Set(Object.keys(curStock));
+  let added=[],changed=[],zeroed=[];
+  exParsed.forEach(d=>{
+    if(!oldBC.has(d.barcode)) added.push(d);
+    else if(curStock[d.barcode]!==d.qty) changed.push({...d, oldQty:curStock[d.barcode]});
+  });
+  oldBC.forEach(bc=>{
+    if(!newBC.has(bc) && curStock[bc]!==0){
+      const item = DATA.find(x=>x.barcode===bc);
+      zeroed.push({barcode:bc, name:item?item.name:'(ไม่ทราบ)', oldQty:curStock[bc]});
+    }
+  });
+  exDiff={added,changed,zeroed};
+
+  document.getElementById('exTotal').textContent=exParsed.length;
+  document.getElementById('exAdd').textContent=added.length;
+  document.getElementById('exChg').textContent=changed.length;
+  document.getElementById('exZero').textContent=zeroed.length;
+
+  const el=document.getElementById('exDiff');
+  if(!added.length && !changed.length && !zeroed.length){
+    el.innerHTML='<div class="ex-empty">✨ ทุกอย่างตรงกัน ไม่มีอะไรต้องอัปเดต</div>';
+    document.getElementById('exUpdateBtn').disabled=true;
+    return;
+  }
+  let html='';
+  added.slice(0,200).forEach(d=>{
+    html+=`<div class="ex-diff-row add"><div><div class="ex-dn">${exEsc(d.name)}</div><div class="ex-dbc">${d.barcode}</div></div><div class="ex-tag ex-tag-add">ใหม่</div><div class="ex-dq" style="color:#22C55E">+${d.qty}</div></div>`;
+  });
+  changed.slice(0,200).forEach(d=>{
+    const delta=d.qty-d.oldQty, s=delta>0?'+':'';
+    html+=`<div class="ex-diff-row chg"><div><div class="ex-dn">${exEsc(d.name)}</div><div class="ex-dbc">${d.barcode}</div></div><div class="ex-tag ex-tag-chg">${d.oldQty}→${d.qty}</div><div class="ex-dq" style="color:${delta>=0?'#22C55E':'#EF4444'}">${s}${delta}</div></div>`;
+  });
+  zeroed.slice(0,200).forEach(d=>{
+    html+=`<div class="ex-diff-row zero"><div><div class="ex-dn">${exEsc(d.name)}</div><div class="ex-dbc">${d.barcode}</div></div><div class="ex-tag ex-tag-zero">หมด</div><div class="ex-dq" style="color:#EF4444">${d.oldQty}→0</div></div>`;
+  });
+  el.innerHTML=html;
+}
+function exEsc(s){ return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+window.doExcelUpdate = async ()=>{
+  if(!exParsed){ showToast('ยังไม่มีข้อมูล','err'); return; }
+  const a=exDiff.added.length, c=exDiff.changed.length, z=exDiff.zeroed.length;
+  if(!confirm(`อัปเดต Firebase?\n\n• เพิ่มใหม่: ${a}\n• ปรับจำนวน: ${c}\n• หมด→0: ${z}`)) return;
+
+  const btn=document.getElementById('exUpdateBtn');
+  btn.disabled=true; btn.textContent='⏳ กำลัง Update...';
+  exLog('☁️ เริ่ม update...');
+  try{
+    // stock = qty จาก excel + ของหมดตั้ง 0
+    const stockUpdate={};
+    exParsed.forEach(d=>{ stockUpdate[d.barcode]=d.qty; });
+    exDiff.zeroed.forEach(d=>{ stockUpdate[d.barcode]=0; });
+
+    // products = ข้อมูลสินค้า (ชื่อ ราคา สี hex)
+    const productsUpdate={};
+    exParsed.forEach(d=>{
+      const hex=exGuessHex(d.color,d.name);
+      const fg=parseInt(hex,16)>0x888888?'111111':'F5F5F5';
+      productsUpdate[d.barcode]={name:d.name,set_price:d.set_price,brand:d.brand,model:d.model,color:d.color,storage:d.storage||'',category:d.category,hex,fg};
+    });
+
+    await update(ref(db,'stock'),stockUpdate);
+    exLog('✓ อัปเดต stock แล้ว','ok');
+    await update(ref(db,'products'),productsUpdate);
+    exLog('✓ อัปเดต products แล้ว','ok');
+    await set(ref(db,`sync_log/sync_${Date.now()}`),{at:new Date().toISOString(),added:a,changed:c,zeroed:z,total:exParsed.length});
+
+    showToast(`✓ Update สำเร็จ ${exParsed.length} รายการ`);
+    exLog('🎉 สำเร็จ! กำลังโหลดข้อมูลใหม่...','ok');
+    btn.textContent='✓ สำเร็จ';
+    // reload data from Firebase
+    setTimeout(async ()=>{
+      await loadFromFirebase();
+      closeExcelModal();
+    }, 1500);
+  }catch(err){
+    exLog('✗ '+err.message,'err');
+    showToast('Update ล้มเหลว: '+err.message,'err');
+    btn.disabled=false; btn.textContent='⬆️ Update เข้า Firebase';
+  }
+};
+</script>
+
+</body>
+</html>
