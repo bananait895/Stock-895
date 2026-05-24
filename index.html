@@ -542,9 +542,10 @@ function rebuildFilters(){
     btn.className = "bf" + (f.id===aF ? " on" : "");
 
     let count;
-    if(f.type==="all")      count = DATA.reduce((a,d)=>a+d.qty,0);
-    else if(f.type==="cat") count = DATA.filter(d=>d.category===f.id).reduce((a,d)=>a+d.qty,0);
-    else                    count = DATA.filter(d=>d.brand===f.id).reduce((a,d)=>a+d.qty,0);
+    const pool = isAdmin ? DATA : DATA.filter(d=>d.qty>0);  // พนักงานเห็นเฉพาะมีของ
+    if(f.type==="all")      count = pool.length;
+    else if(f.type==="cat") count = pool.filter(d=>d.category===f.id).length;
+    else                    count = pool.filter(d=>d.brand===f.id).length;
 
     btn.innerHTML = `<span>${f.label}</span><span class="bn">${count}</span>`;
     btn.onclick = ()=>{
@@ -1173,9 +1174,9 @@ function buildFilters() {
     if(!f) return;
     let rows = isAdmin ? DATA : DATA.filter(d=>d.qty>0);
     let count;
-    if(f.type==='all')      count = rows.reduce((a,d)=>a+d.qty,0);
-    else if(f.type==='cat') count = rows.filter(d=>d.category===f.id).reduce((a,d)=>a+d.qty,0);
-    else                    count = rows.filter(d=>d.brand===f.id&&d.category==='Smartphone').reduce((a,d)=>a+d.qty,0);
+    if(f.type==='all')      count = rows.length;
+    else if(f.type==='cat') count = rows.filter(d=>d.category===f.id).length;
+    else                    count = rows.filter(d=>d.brand===f.id&&d.category==='Smartphone').length;
     const bn = btn.querySelector('.bn');
     if(bn) bn.textContent = count;
   });
@@ -1246,11 +1247,12 @@ async function loadFromFirebase(){
     const { get } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js");
     const pSnap = await get(ref(db,'products'));
     const products = pSnap.val();
+    const sSnap = await get(ref(db,'stock'));
+    const stock = sSnap.val() || {};
 
-    if(products && Object.keys(products).length > 0){
-      // มี products ใน Firebase → สร้าง DATA ใหม่จาก Firebase (ข้อมูลล่าสุด)
-      const sSnap = await get(ref(db,'stock'));
-      const stock = sSnap.val() || {};
+    // สร้าง DATA จาก Firebase เฉพาะเมื่อมี products *และ* มี stock จริง
+    // ถ้า stock ว่าง (ยังไม่เคยอัป Excel) → ใช้ DATA ในไฟล์ (มีของครบ)
+    if(products && Object.keys(products).length > 0 && Object.keys(stock).length > 0){
       const newData = [];
       Object.keys(products).forEach(bc=>{
         const p = products[bc];
@@ -1262,7 +1264,7 @@ async function loadFromFirebase(){
           model: p.model || p.name || '',
           color: p.color || '',
           storage: p.storage || '',
-          qty: stock[bc] !== undefined ? stock[bc] : (p.qty || 0),
+          qty: stock[bc] !== undefined ? stock[bc] : 0,
           set_price: p.set_price || 0,
           brand: p.brand || '',
           category: p.category || '',
@@ -1272,6 +1274,10 @@ async function loadFromFirebase(){
       });
       DATA = newData;
       console.log('✓ โหลดข้อมูลจาก Firebase:', DATA.length, 'รายการ');
+    } else if(Object.keys(stock).length > 0){
+      // มี stock แต่ไม่มี products → อัปเดตแค่ qty ทับ DATA เดิม
+      DATA.forEach(d=>{ if(stock[d.barcode]!==undefined) d.qty=stock[d.barcode]; });
+      console.log('ℹ️ อัปเดต qty จาก Firebase, ใช้ข้อมูลสินค้าในไฟล์');
     } else {
       // Firebase ว่าง → ใช้ DATA เดิมในไฟล์ (fallback)
       console.log('ℹ️ Firebase ว่าง ใช้ข้อมูลในไฟล์:', DATA.length, 'รายการ');
