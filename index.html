@@ -93,6 +93,8 @@ body{background:var(--bg);font-family:'Sarabun',sans-serif;color:var(--text);pad
 .cdot{width:20px;height:20px;border-radius:50%;border:1px solid rgba(255,255,255,.15);flex-shrink:0;transition:.15s}
 .cchip-link:hover .cdot{transform:scale(1.12)}
 .cname{font-size:12px;font-weight:500;white-space:nowrap}
+.cchip-txt{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.cbc{font-size:9px;color:var(--muted,#52525B);font-family:'IBM Plex Mono',monospace;margin-top:1px}
 .cqty-btn{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;cursor:pointer;
   border:none;border-left:1px solid var(--b2,#1E1E27);background:transparent;
   padding:0 12px;min-width:42px;min-height:38px;transition:.12s}
@@ -580,7 +582,7 @@ function render(){
   rows.forEach(d=>{
     const key=mdlKey(d);
     if(!groups[key]){
-      groups[key]={model:d.model||key, modelName:key, category:d.category, brand:d.brand,
+      groups[key]={model:d.model||key, modelName:key.split('\u0000')[0], category:d.category, brand:d.brand,
                    price:d.set_price||0, storage:d.storage||'', variants:[]};
     }
     groups[key].variants.push(d);
@@ -619,6 +621,18 @@ function mdlKey(d){
     if(w2) return w2[1].trim();
   }
 
+  // Notebook: ใช้ชื่อเต็ม (ไม่จับกลุ่ม) เพราะแต่ละเครื่องคนละ part number
+  // ป้องกันชื่อซ้ำถูกมองเป็นรุ่นเดียวกัน — เติมแค่ "Notebook" หลังแบรนด์
+  if(d.category==='Notebook'){
+    let nb = (d.name||'').replace(/^BS@\s*/i,'').trim();
+    const brand=(d.brand||'').trim();
+    if(brand && nb.startsWith(brand) && !/Notebook/i.test(nb)){
+      nb = brand + ' Notebook' + nb.slice(brand.length);
+    }
+    // ใส่ barcode ต่อท้าย key (มองไม่เห็น) เพื่อบังคับให้แต่ละเครื่องแยกการ์ด
+    return nb + '\u0000' + d.barcode;
+  }
+
   const color=(d.color||'').trim();
   // ตัดชื่อสีออกจากท้าย model เพื่อให้รุ่นเดียวกัน (หลายสี) จับกลุ่มได้
   if(color && m.toLowerCase().endsWith(color.toLowerCase())){
@@ -634,7 +648,7 @@ function mdlCard(g){
   const sub=[];
   if(g.price) sub.push(g.price.toLocaleString()+'฿');
   if(g.storage) sub.push(g.storage);
-  sub.push(g.variants.length+' สี');
+  if(g.variants.length>1) sub.push(g.variants.length+' สี');  // โชว์เฉพาะมีหลายสี
   if(g.brand) sub.push(g.brand);
 
   return `<div class="mcard ${cardCls}">
@@ -654,7 +668,12 @@ function mdlCard(g){
 // ── helper: chip สีแต่ละ variant ──
 function vChip(v,g){
   const qcls=v.qty===0?'zero':(v.qty<=2?'low':'ok');
-  const label=v.color||v.storage||'—';
+  let label=v.color||v.storage||'';
+  if(!label){
+    // ดึงสีจากชื่อ (เช่น Notebook ที่ color ว่าง แต่ชื่อมีสีท้าย)
+    const cm=(v.name||'').match(/[\s_](Grey|Gray|Silver|Blue|Black|Balck|White|Red|Gold|Green|Pink|Purple)\b/i);
+    label = cm ? cm[1].replace(/Balck/i,'Black') : 'เครื่อง';
+  }
   const gUrl='https://www.google.com/search?q='+encodeURIComponent((g.modelName+' '+(v.color||'')).trim())+'&udm=2';
   const bcEsc=v.barcode.replace(/'/g,"\\'");
 
@@ -663,7 +682,7 @@ function vChip(v,g){
     return `<span class="cchip ${v.qty===0?'zero':''}${changes[v.barcode]!==undefined?' changed':''}">
       <a class="cchip-link" href="${gUrl}" target="_blank" rel="noopener" title="ดูสี ${esc(v.color)} ใน Google Images">
         <span class="cdot" style="background:#${v.hex}"></span>
-        <span class="cname">${esc(label)}</span>
+        <span class="cchip-txt"><span class="cname">${esc(label)}</span><span class="cbc">${v.barcode}</span></span>
       </a>
       <button class="cqty-btn ${qcls}" onclick="copyName('${bcEsc}')" title="คลิกคัดลอกเลข Product (${v.barcode})">${v.qty}</button>
     </span>`;
@@ -671,7 +690,7 @@ function vChip(v,g){
   return `<span class="cchip ${v.qty===0?'zero':''}">
     <a class="cchip-link" href="${gUrl}" target="_blank" rel="noopener" title="ดูสี ${esc(v.color)} ใน Google Images">
       <span class="cdot" style="background:#${v.hex}"></span>
-      <span class="cname">${esc(label)}</span>
+      <span class="cchip-txt"><span class="cname">${esc(label)}</span><span class="cbc">${v.barcode}</span></span>
     </a>
     <button class="cqty-btn ${qcls}" onclick="copyName('${bcEsc}')" title="คลิกคัดลอกเลข Product (${v.barcode})">${v.qty}</button>
   </span>`;
@@ -708,7 +727,7 @@ function openModal(){
   enterAdmin();
 }
 function enterAdmin(){
-  isAdmin=true; changes={};
+  isAdmin=true; changes={}; sessionLog=[];
   document.getElementById('viewMode').style.display='none';
   document.getElementById('adminMode').style.display='block';
   document.getElementById('lockBtn').textContent='🔒 ออก';
@@ -730,15 +749,7 @@ function checkPw(){
 document.addEventListener('DOMContentLoaded',function(){var ov=document.getElementById('overlay');if(ov)ov.addEventListener('click',function(e){if(e.target===this)closeModal();});});
 
 function logout(){
-  // ถ้ามีการแก้ที่ยังไม่บันทึก เตือน
-  if(Object.keys(changes).length>0){
-    if(!confirm('มีการแก้ไข '+Object.keys(changes).length+' รายการที่ยังไม่บันทึก ออกเลยไหม?')) return;
-  }
-  Object.keys(changes).forEach(bc=>{
-    const item=DATA.find(d=>d.barcode===bc);
-    if(item&&item._orig!==undefined){item.qty=item._orig;delete item._orig;}
-  });
-  isAdmin=false; changes={};
+  isAdmin=false; changes={}; sessionLog=[];
   // สลับกลับหน้าดู
   document.getElementById('adminMode').style.display='none';
   document.getElementById('viewMode').style.display='block';
@@ -748,27 +759,22 @@ function logout(){
 }
 
 // แสดงรายการที่แก้ไขในหน้า Admin
+let sessionLog = [];  // รายการที่เซฟในรอบนี้ (เซฟทันทีหลังสแกน)
 function renderChanges(){
   const list=document.getElementById('achList');
-  const keys=Object.keys(changes);
-  document.getElementById('achCount').textContent=keys.length;
-  document.getElementById('saveBtn').disabled = keys.length===0;
-  if(!keys.length){
-    list.innerHTML='<div class="ach-empty">ยังไม่มีการแก้ไข — สแกนเพื่อเริ่ม</div>';
+  document.getElementById('achCount').textContent=sessionLog.length;
+  const saveBtn=document.getElementById('saveBtn');
+  if(saveBtn) saveBtn.style.display='none';  // ไม่ต้องมีปุ่มบันทึกแล้ว (เซฟทันที)
+  if(!sessionLog.length){
+    list.innerHTML='<div class="ach-empty">กดสแกนเพิ่ม/ลบ — บันทึกอัตโนมัติทันที</div>';
     return;
   }
-  list.innerHTML=keys.map(bc=>{
-    const item=DATA.find(d=>d.barcode===bc);
-    if(!item) return '';
-    const orig=item._orig!==undefined?item._orig:item.qty;
-    const delta=changes[bc]-orig;
-    const isNew=orig===0 && item._isNew;
-    const nm=item.name+(item.color?' '+item.color:'');
+  list.innerHTML=sessionLog.map(e=>{
     let deltaTxt;
-    if(delta>0) deltaTxt='<span class="ach-delta up">+'+delta+' → '+changes[bc]+'</span>';
-    else if(delta<0) deltaTxt='<span class="ach-delta down">'+delta+' → '+changes[bc]+'</span>';
-    else deltaTxt='<span class="ach-delta">= '+changes[bc]+'</span>';
-    return '<div class="ach-item"><span class="ach-name">'+escHtml(nm)+(isNew?'<span class="ach-new">ใหม่</span>':'')+'</span>'+deltaTxt+'</div>';
+    if(e.delta>0) deltaTxt='<span class="ach-delta up">+'+e.delta+' → '+e.to+'</span>';
+    else if(e.delta<0) deltaTxt='<span class="ach-delta down">'+e.delta+' → '+e.to+'</span>';
+    else deltaTxt='<span class="ach-delta">= '+e.to+'</span>';
+    return '<div class="ach-item"><span class="ach-name">'+escHtml(e.name)+(e.isNew?'<span class="ach-new">ใหม่</span>':'')+'</span>'+deltaTxt+'</div>';
   }).join('');
 }
 
@@ -924,10 +930,23 @@ function submitAddProduct(){
     _orig:0, _isNew:true
   };
   DATA.push(newItem);
-  changes[barcode] = qty;
   closeAddModal();
-  renderChanges();
-  showToast('✅ เพิ่ม '+name+' แล้ว (กด 💾 บันทึก)');
+  showToast('⏳ กำลังบันทึก '+name+'...');
+  // เซฟทันที
+  saveOne(barcode, qty, 0, qty, newItem).then(ok=>{
+    if(ok){
+      sessionLog.unshift({name:name+(color?' '+color:''), delta:qty, to:qty, isNew:true});
+      if(sessionLog.length>30) sessionLog.pop();
+      delete newItem._orig; delete newItem._isNew;
+      render(); updateKpi(); buildFilters(); renderChanges();
+      showToast('✅ เพิ่ม '+name+' สำเร็จ');
+    } else {
+      // เซฟไม่ได้ → เอาออกจาก DATA
+      const idx=DATA.findIndex(d=>d.barcode===barcode);
+      if(idx>=0) DATA.splice(idx,1);
+      showToast('❌ บันทึกไม่สำเร็จ ลองใหม่','err');
+    }
+  });
 }
 
 // ════════════════════════════════════════════════
@@ -968,6 +987,8 @@ window.armScan = function(){
 window.closeScanMode = async function(){
   document.getElementById('scanOverlay').classList.remove('show');
   if(scanner){ try{ await scanner.stop(); }catch(e){} }
+  // อัปเดตหน้า Admin (changes เซฟไปแล้ว รายการล่าสุดรีเฟรช)
+  if(typeof renderChanges==='function') renderChanges();
 };
 
 async function startScanner(){
@@ -1059,15 +1080,58 @@ function onScan(decoded){
   }
 }
 
-function scanAdjust(item, delta){
-  if(item._orig===undefined) item._orig = item.qty;  // เก็บค่าเดิมไว้
+async function scanAdjust(item, delta){
+  if(item._orig===undefined) item._orig = item.qty;
   const cur = changes[item.barcode]!==undefined ? changes[item.barcode] : item.qty;
   const nv = Math.max(0, cur+delta);
-  changes[item.barcode] = nv;
   item.qty = nv;
-  renderChanges();
-  scanFlash((delta>0?'✓ เพิ่ม +1  ':'✓ ลบ −1  ')+item.name+' = '+nv+' ชิ้น', 'found');
+  scanFlash((delta>0?'✓ เพิ่ม +1  ':'✓ ลบ −1  ')+item.name+' = '+nv+' ชิ้น · กำลังบันทึก...', 'found');
   addRecent(item.name+(item.color?' '+item.color:''), delta, nv);
+
+  // บันทึกตัวนี้เข้า Firebase ทันที
+  const ok = await saveOne(item.barcode, nv, item._orig, delta, item);
+  if(ok){
+    scanFlash((delta>0?'✓ เพิ่ม +1  ':'✓ ลบ −1  ')+item.name+' = '+nv+' ✓ บันทึกแล้ว', 'found');
+    sessionLog.unshift({name:item.name+(item.color?' '+item.color:''), delta, to:nv, isNew:!!item._isNew});
+    if(sessionLog.length>30) sessionLog.pop();
+    if(item._orig!==undefined) delete item._orig;
+    // ปิดกล้อง → กลับหน้าแก้ไข (รอแป๊บให้เห็นข้อความ)
+    setTimeout(async ()=>{ await closeScanMode(); }, 700);
+  } else {
+    scanFlash('❌ บันทึกไม่สำเร็จ ลองสแกนใหม่', 'err');
+    item.qty = item._orig; delete item._orig;
+  }
+}
+
+// บันทึก 1 รายการเข้า Firebase ทันที (สำหรับสแกน)
+async function saveOne(barcode, newQty, orig, delta, item){
+  // รอ Firebase พร้อม
+  if(!window._fbDb||!window._fbRef||!window._fbUpdate){
+    let wait=0;
+    await new Promise(res=>{const t=setInterval(()=>{wait+=200;
+      if(window._fbDb&&window._fbRef&&window._fbUpdate){clearInterval(t);res();}
+      else if(wait>=5000){clearInterval(t);res();}},200);});
+  }
+  if(!window._fbUpdate||!window._fbRef||!window._fbDb){return false;}
+  try{
+    const wasNew = !!(item && item._isNew);
+    await window._fbUpdate(window._fbRef(window._fbDb,'stock'), {[barcode]:newQty});
+    // สินค้าใหม่ → เขียน products
+    if(wasNew){
+      await window._fbUpdate(window._fbRef(window._fbDb,'products'), {[barcode]:{
+        name:item.name,set_price:item.set_price,brand:item.brand,model:item.model||item.name,
+        color:item.color,storage:item.storage||'',category:item.category,hex:item.hex,fg:item.fg}});
+    }
+    // ประวัติ
+    const now=Date.now();
+    await window._fbSet(window._fbRef(window._fbDb,`history/h_${now}`),{
+      at:new Date().toISOString(), type: wasNew?'new':'scan',
+      name:item?item.name:'', color:item?(item.color||''):'', barcode,
+      from:orig, to:newQty, delta
+    });
+    await window._fbSet(window._fbRef(window._fbDb,'meta/lastUpdate'), new Date().toISOString());
+    return true;
+  }catch(e){ return false; }
 }
 
 function scanNewProduct(code){
