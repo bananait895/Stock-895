@@ -517,12 +517,13 @@ let SM_BRANDS = [];
 let filterItems = [];
 
 function rebuildFilters(){
-  const allBrands = [...new Set(DATA.filter(d=>d.category==='Smartphone').map(d=>d.brand).filter(Boolean))];
+  // normalize เป็น Title Case (SAMSUNG → Samsung) กันชื่อแบรนด์ตัวพิมพ์ไม่ตรง
+  const titleCase = s => s ? s.charAt(0).toUpperCase()+s.slice(1).toLowerCase() : s;
+  const allBrands = [...new Set(DATA.filter(d=>(d.category||'').toLowerCase()==='smartphone')
+    .map(d=>titleCase(d.brand)).filter(Boolean))];
   // แบรนด์หลักที่อยากให้ขึ้นก่อน (ตามลำดับ)
   const priorityBrands = ['Samsung','Xiaomi','Oppo','Vivo'];
-  // แบรนด์หลักที่มีจริงใน DATA (เรียงตามลำดับที่กำหนด)
   const mainBrands = priorityBrands.filter(b=>allBrands.some(x=>x.toLowerCase()===b.toLowerCase()));
-  // แบรนด์อื่นๆ ที่เหลือ (เรียง A-Z)
   const otherBrands = allBrands.filter(b=>!priorityBrands.some(p=>p.toLowerCase()===b.toLowerCase())).sort();
   SM_BRANDS = [...mainBrands, ...otherBrands];
 
@@ -544,8 +545,8 @@ function rebuildFilters(){
     let count;
     const pool = isAdmin ? DATA : DATA.filter(d=>d.qty>0);  // พนักงานเห็นเฉพาะมีของ
     if(f.type==="all")      count = pool.length;
-    else if(f.type==="cat") count = pool.filter(d=>d.category===f.id).length;
-    else                    count = pool.filter(d=>d.brand===f.id).length;
+    else if(f.type==="cat") count = pool.filter(d=>(d.category||'').toLowerCase()===f.id.toLowerCase()).length;
+    else                    count = pool.filter(d=>(d.brand||'').toLowerCase()===f.id.toLowerCase()).length;
 
     btn.innerHTML = `<span>${f.label}</span><span class="bn">${count}</span>`;
     btn.onclick = ()=>{
@@ -568,8 +569,8 @@ function render(){
   const q=document.getElementById("q").value.toLowerCase();
   let rows=DATA.filter(d=>{
     if(aF!=="all"){
-      if(aFtype==="cat"   && d.category!==aF) return false;
-      if(aFtype==="brand" && d.brand!==aF)    return false;
+      if(aFtype==="cat"   && (d.category||'').toLowerCase()!==aF.toLowerCase()) return false;
+      if(aFtype==="brand" && (d.brand||'').toLowerCase()!==aF.toLowerCase())    return false;
     }
     if(!isAdmin && d.qty===0) return false;
     if(aS==="low" && !(d.qty>=1&&d.qty<=2)) return false;
@@ -1175,8 +1176,8 @@ function buildFilters() {
     let rows = isAdmin ? DATA : DATA.filter(d=>d.qty>0);
     let count;
     if(f.type==='all')      count = rows.length;
-    else if(f.type==='cat') count = rows.filter(d=>d.category===f.id).length;
-    else                    count = rows.filter(d=>d.brand===f.id&&d.category==='Smartphone').length;
+    else if(f.type==='cat') count = rows.filter(d=>(d.category||'').toLowerCase()===f.id.toLowerCase()).length;
+    else                    count = rows.filter(d=>(d.brand||'').toLowerCase()===f.id.toLowerCase()&&(d.category||'').toLowerCase()==='smartphone').length;
     const bn = btn.querySelector('.bn');
     if(bn) bn.textContent = count;
   });
@@ -1470,7 +1471,9 @@ function exParseExcel(file){
             const name=String(r.Name||r.name||'').trim();
             const qty=parseInt(r.Number||r.number||0)||0;
             const price=parseInt(r['Set Price']||r.set_price||r['Min Price']||0)||0;
-            const brand=String(r.Brand||r.brand||'').trim();
+            let brand=String(r.Brand||r.brand||'').trim();
+            // แปลงเป็น Title Case ให้ตรงกับ filter (SAMSUNG → Samsung, iqoo → Iqoo)
+            if(brand) brand=brand.charAt(0).toUpperCase()+brand.slice(1).toLowerCase();
             const model=String(r.Model||r.model||'').trim();
             let color=String(r.Color||r.color||'').trim();
             if(!color) color=exDeriveColor(name);
