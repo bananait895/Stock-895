@@ -663,8 +663,14 @@ function mdlKey(d){
     return nb + '\u0000' + d.barcode;
   }
 
+  // ตัดเฉพาะ "ชื่อสี" ท้ายชื่อ เก็บความจุ (128GB/256GB) ไว้ → คนละความจุ = คนละการ์ด
+  const COLOR_WORDS='Black|White|Pink|Blue|Teal|Green|Purple|Red|Gold|Silver|Gray|Grey|Ultramarine|Lavender|Midnight|Starlight|Sky Blue|Mist Blue|Deep Blue|Cosmic Orange|Orange|Natural Titanium|Desert Titanium|Blue Titanium|White Titanium|Black Titanium|Titanium|Yellow|Graphite|Sierra Blue|Alpine Green|Rose Gold|Space Gray|Space Grey|Jet Black';
+  let m2=m.replace(new RegExp('\\s+('+COLOR_WORDS+')\\s*$','i'),'').trim();
+  // เผื่อมีสีซ้อน 2 คำ (เช่น "Sky Blue") ตัดอีกรอบ
+  m2=m2.replace(new RegExp('\\s+('+COLOR_WORDS+')\\s*$','i'),'').trim();
+  if(m2) return m2;
+  // fallback: ตัดด้วย color field เดิม
   const color=(d.color||'').trim();
-  // ตัดชื่อสีออกจากท้าย model เพื่อให้รุ่นเดียวกัน (หลายสี) จับกลุ่มได้
   if(color && m.toLowerCase().endsWith(color.toLowerCase())){
     m=m.slice(0, m.length-color.length).trim();
   }
