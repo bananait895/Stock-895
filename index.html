@@ -152,6 +152,23 @@ body{background:var(--bg);font-family:'Sarabun',sans-serif;color:var(--text);pad
   border-radius:12px;padding:13px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
 .admin-hist-btn:hover{border-color:#F5A623;color:var(--text)}
 
+/* ช่องกรอกมือ */
+.manual-box{background:var(--s1,#101015);border:1px solid var(--border,#2A2A35);border-radius:14px;padding:14px}
+.manual-label{font-size:12px;color:var(--sub,#71717A);margin-bottom:9px}
+.manual-input{width:100%;background:var(--s2,#16161D);border:1px solid var(--border,#2A2A35);
+  border-radius:10px;padding:12px 14px;color:var(--text);font-family:'IBM Plex Mono',monospace;
+  font-size:15px;outline:none;transition:.15s;margin-bottom:8px}
+.manual-input:focus{border-color:#F5A623;box-shadow:0 0 0 3px rgba(245,166,35,.12)}
+.manual-info{font-size:12px;min-height:18px;margin-bottom:8px;color:var(--sub,#71717A)}
+.manual-info.found{color:#22C55E;font-weight:600}
+.manual-info.err{color:#EF4444}
+.manual-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.manual-btn{padding:13px;border:none;border-radius:10px;font-family:inherit;font-size:15px;
+  font-weight:700;cursor:pointer;transition:.12s}
+.manual-btn:active{transform:scale(.96)}
+.manual-btn.add{background:#3B82F6;color:#fff}.manual-btn.add:hover{background:#2563eb}
+.manual-btn.del{background:#EF4444;color:#fff}.manual-btn.del:hover{background:#dc2626}
+
 /* History modal */
 .hist-modal{max-width:440px;text-align:left;max-height:84vh;display:flex;flex-direction:column}
 .hist-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;min-height:200px;max-height:60vh}
@@ -347,6 +364,17 @@ body{background:var(--bg);font-family:'Sarabun',sans-serif;color:var(--text);pad
         <div class="ac-title">สแกนลบ</div>
         <div class="ac-sub">ขายออก</div>
       </button>
+    </div>
+
+    <div class="manual-box">
+      <div class="manual-label">⌨️ กรอกเลข Product เอง (กรณีสแกนไม่สะดวก)</div>
+      <input class="manual-input" id="manualBc" type="text" inputmode="numeric"
+        placeholder="พิมพ์หรือวางเลข Product" onkeydown="if(event.key==='Enter')manualAdjust(1)">
+      <div class="manual-info" id="manualInfo"></div>
+      <div class="manual-btns">
+        <button class="manual-btn del" onclick="manualAdjust(-1)">➖ ลบ 1</button>
+        <button class="manual-btn add" onclick="manualAdjust(1)">➕ เพิ่ม 1</button>
+      </div>
     </div>
 
     <button class="admin-hist-btn" onclick="openHistory()">📜 ดูประวัติย้อนหลัง (30 วัน)</button>
@@ -1079,6 +1107,68 @@ function onScan(decoded){
     } else {
       scanFlash('❌ ไม่พบ: '+code, 'err');
     }
+  }
+}
+
+// ── กรอกเลข Product เอง (เพิ่ม/ลบด้วยมือ) ──
+function manualFindItem(code){
+  code = String(code||'').trim();
+  if(!code) return null;
+  let item = DATA.find(d=>d.barcode===code);
+  if(!item){
+    const m = DATA.filter(d=>d.barcode.includes(code)||code.includes(d.barcode));
+    if(m.length===1) item = m[0];
+  }
+  return item;
+}
+
+// แสดงข้อมูลสินค้าขณะพิมพ์
+document.addEventListener('DOMContentLoaded',function(){
+  const inp=document.getElementById('manualBc');
+  if(inp) inp.addEventListener('input',function(){
+    const info=document.getElementById('manualInfo');
+    const code=this.value.trim();
+    if(!code){ info.textContent=''; info.className='manual-info'; return; }
+    const item=manualFindItem(code);
+    if(item){
+      info.className='manual-info found';
+      info.textContent='✓ '+item.name+(item.color?' '+item.color:'')+' · มี '+item.qty+' ชิ้น';
+    } else {
+      info.className='manual-info err';
+      info.textContent='✗ ไม่พบเลข Product นี้ในระบบ';
+    }
+  });
+});
+
+async function manualAdjust(delta){
+  const inp=document.getElementById('manualBc');
+  const info=document.getElementById('manualInfo');
+  const code=inp.value.trim();
+  if(!code){ info.className='manual-info err'; info.textContent='กรุณากรอกเลข Product'; return; }
+  const item=manualFindItem(code);
+  if(!item){ info.className='manual-info err'; info.textContent='✗ ไม่พบเลข Product นี้ในระบบ'; return; }
+  if(delta<0 && item.qty<=0){ info.className='manual-info err'; info.textContent='⚠️ '+item.name+' หมดแล้ว (0)'; return; }
+
+  if(item._orig===undefined) item._orig=item.qty;
+  const nv=Math.max(0,item.qty+delta);
+  item.qty=nv;
+  info.className='manual-info found';
+  info.textContent=(delta>0?'✓ เพิ่ม +1  ':'✓ ลบ −1  ')+item.name+' = '+nv+' · กำลังบันทึก...';
+
+  const ok=await saveOne(item.barcode, nv, item._orig, delta, item);
+  if(ok){
+    info.textContent=(delta>0?'✓ เพิ่ม +1  ':'✓ ลบ −1  ')+item.name+' = '+nv+' ✓ บันทึกแล้ว';
+    sessionLog.unshift({name:item.name+(item.color?' '+item.color:''), delta, to:nv, isNew:!!item._isNew});
+    if(sessionLog.length>30) sessionLog.pop();
+    if(item._orig!==undefined) delete item._orig;
+    if(navigator.vibrate) navigator.vibrate(40);
+    renderChanges();
+    // เคลียร์ช่องพร้อมกรอกตัวต่อไป
+    inp.value=''; inp.focus();
+    setTimeout(()=>{ if(!inp.value){info.textContent='';info.className='manual-info';} }, 2500);
+  } else {
+    info.className='manual-info err'; info.textContent='❌ บันทึกไม่สำเร็จ ลองใหม่';
+    item.qty=item._orig; delete item._orig;
   }
 }
 
