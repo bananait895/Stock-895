@@ -665,9 +665,15 @@ function mdlKey(d){
 
   // ตัดเฉพาะ "ชื่อสี" ท้ายชื่อ เก็บความจุ (128GB/256GB) ไว้ → คนละความจุ = คนละการ์ด
   const COLOR_WORDS='Black|White|Pink|Blue|Teal|Green|Purple|Red|Gold|Silver|Gray|Grey|Ultramarine|Lavender|Midnight|Starlight|Sky Blue|Mist Blue|Deep Blue|Cosmic Orange|Orange|Natural Titanium|Desert Titanium|Blue Titanium|White Titanium|Black Titanium|Titanium|Yellow|Graphite|Sierra Blue|Alpine Green|Rose Gold|Space Gray|Space Grey|Jet Black';
-  let m2=m.replace(new RegExp('\\s+('+COLOR_WORDS+')\\s*$','i'),'').trim();
-  // เผื่อมีสีซ้อน 2 คำ (เช่น "Sky Blue") ตัดอีกรอบ
-  m2=m2.replace(new RegExp('\\s+('+COLOR_WORDS+')\\s*$','i'),'').trim();
+  let m2=m;
+  // 1) ตัดปีท้ายชื่อ (2024/2025/2026) ก่อน — เพื่อให้สีอยู่ติดท้าย
+  m2=m2.replace(/\s+(20\d{2})\s*$/,'').trim();
+  // 2) ตัดสี (รองรับทั้ง "X Blue" และ "X - Blue")
+  m2=m2.replace(new RegExp('\\s*-?\\s+('+COLOR_WORDS+')\\s*$','i'),'').trim();
+  // 3) ตัดสีรอบ 2 (เผื่อมีสีซ้อน เช่น "Sky Blue" หรือ "Space Grey" ที่ขาดท่อน)
+  m2=m2.replace(new RegExp('\\s*-?\\s+('+COLOR_WORDS+')\\s*$','i'),'').trim();
+  // 4) ล้าง separator ค้างท้าย (- : | ,)
+  m2=m2.replace(/[\s\-:|,]+$/,'').trim();
   if(m2) return m2;
   // fallback: ตัดด้วย color field เดิม
   const color=(d.color||'').trim();
