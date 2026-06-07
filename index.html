@@ -115,6 +115,8 @@ body{background:var(--bg);font-family:'Sarabun',sans-serif;color:var(--text);pad
 .admin-card:active{transform:scale(.98)}
 .admin-card.excel{border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.06)}
 .admin-card.excel:hover{background:rgba(34,197,94,.12)}
+.admin-card.excel.over{border-style:dashed;border-color:#22C55E;border-width:2px;
+  background:rgba(34,197,94,.18);transform:scale(1.02)}
 .admin-scan-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .admin-card.scan-add{flex-direction:column;gap:6px;text-align:center;padding:22px 12px;
   border-color:rgba(59,130,246,.4);background:rgba(59,130,246,.06)}
@@ -345,13 +347,14 @@ body{background:var(--bg);font-family:'Sarabun',sans-serif;color:var(--text);pad
 <!-- ========== ADMIN MODE (หน้าแก้ไข) ========== -->
 <div id="adminMode" style="display:none">
   <div class="admin-panel">
-    <button class="admin-card excel" onclick="openExcelModal()">
+    <label class="admin-card excel" id="adminExcelDrop">
+      <input type="file" id="adminExcelFile" accept=".xlsx,.xls" style="display:none">
       <div class="ac-ico">📥</div>
       <div class="ac-txt">
         <div class="ac-title">อัปโหลด Excel</div>
-        <div class="ac-sub">อัปเดตสต็อกจากไฟล์ ITEC</div>
+        <div class="ac-sub">ลากไฟล์ ITEC มาวางที่นี่ หรือคลิกเลือก</div>
       </div>
-    </button>
+    </label>
 
     <div class="admin-scan-row">
       <button class="admin-card scan-add" onclick="openScanMode('add')">
@@ -1553,6 +1556,22 @@ const exFile = document.getElementById('exFile');
 ['dragleave','drop'].forEach(ev=>exDrop.addEventListener(ev,e=>{e.preventDefault();exDrop.classList.remove('over');}));
 exDrop.addEventListener('drop',e=>{ const f=e.dataTransfer.files?.[0]; if(f) exHandleFile(f); });
 exFile.addEventListener('change',e=>{ const f=e.target.files?.[0]; if(f) exHandleFile(f); });
+
+// ── หน้า Admin: ลาก Excel เข้าการ์ดได้เลย ไม่ต้องเปิด modal ก่อน ──
+const adminExcelDrop = document.getElementById('adminExcelDrop');
+const adminExcelFile = document.getElementById('adminExcelFile');
+if(adminExcelDrop){
+  ['dragenter','dragover'].forEach(ev=>adminExcelDrop.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();adminExcelDrop.classList.add('over');}));
+  ['dragleave','drop'].forEach(ev=>adminExcelDrop.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();adminExcelDrop.classList.remove('over');}));
+  adminExcelDrop.addEventListener('drop',e=>{
+    const f=e.dataTransfer.files?.[0];
+    if(f){ window.openExcelModal(); setTimeout(()=>exHandleFile(f),100); }
+  });
+  adminExcelFile.addEventListener('change',e=>{
+    const f=e.target.files?.[0];
+    if(f){ window.openExcelModal(); setTimeout(()=>exHandleFile(f),100); }
+  });
+}
 
 function exParseExcel(file){
   return new Promise((resolve,reject)=>{
