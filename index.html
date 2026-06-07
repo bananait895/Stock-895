@@ -613,9 +613,11 @@ function render(){
   // ── จัดกลุ่มตามรุ่น (Option C) ──
   const groups={};
   rows.forEach(d=>{
-    const key=mdlKey(d);
+    const rawKey=mdlKey(d);
+    // key สำหรับจับกลุ่ม = ตัวพิมพ์เล็ก (ไม่สนพิมพ์ใหญ่-เล็ก) → "iPhone 15" = "IPHONE 15"
+    const key=rawKey.toLowerCase();
     if(!groups[key]){
-      groups[key]={model:d.model||key, modelName:key.split('\u0000')[0], category:d.category, brand:d.brand,
+      groups[key]={model:d.model||rawKey, modelName:rawKey.split('\u0000')[0], category:d.category, brand:d.brand,
                    price:d.set_price||0, storage:d.storage||'', variants:[]};
     }
     groups[key].variants.push(d);
@@ -677,6 +679,16 @@ function mdlKey(d){
   m2=m2.replace(new RegExp('\\s*-?\\s+('+COLOR_WORDS+')\\s*$','i'),'').trim();
   // 4) ล้าง separator ค้างท้าย (- : | ,)
   m2=m2.replace(/[\s\-:|,]+$/,'').trim();
+  // 5) กันเหนียว: ผนวกความจุเข้า key เสมอ (เผื่อชื่อไม่มีความจุ แต่ field storage มี)
+  //    → iPhone 15 128GB กับ 256GB แยกการ์ดแน่นอน แม้ข้อมูลมาจาก Firebase
+  let stg=(d.storage||'').trim();
+  if(!stg){
+    const sm=(d.name||'').match(/(\d+\s?(?:GB|TB))/i);
+    if(sm) stg=sm[1].replace(/\s/,'');
+  }
+  if(stg && !new RegExp(stg.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i').test(m2)){
+    m2 = m2 + ' ' + stg;
+  }
   if(m2) return m2;
   // fallback: ตัดด้วย color field เดิม
   const color=(d.color||'').trim();
