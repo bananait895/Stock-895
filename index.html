@@ -812,6 +812,8 @@ function logout(){
   document.getElementById('viewMode').style.display='block';
   document.getElementById('lockBtn').textContent='✏️ แก้ไขสต็อก';
   document.getElementById('lockBtn').onclick=openModal;
+  // สร้าง filter ใหม่ เผื่อมีสินค้า/แบรนด์ใหม่เข้ามาระหว่างอยู่ในโหมดแก้ไข
+  if(typeof rebuildFilters==='function') rebuildFilters();
   render(); updateKpi(); buildFilters(); showToast('🔒 ออกจากโหมดแก้ไข');
 }
 
@@ -1396,6 +1398,7 @@ async function loadFromFirebase(){
         });
       });
       DATA = newData;
+      window._dataFromFirebase = true;
       console.log('✓ โหลดข้อมูลจาก Firebase:', DATA.length, 'รายการ');
     } else if(Object.keys(stock).length > 0){
       // มี stock แต่ไม่มี products → อัปเดตแค่ qty ทับ DATA เดิม
@@ -1417,15 +1420,85 @@ async function loadFromFirebase(){
 loadFromFirebase();
 
 // ── Realtime: ฟังการเปลี่ยน stock (qty) ───────────────
+let _lastStock = {};   // เก็บ stock ล่าสุดไว้ merge ตอน products เปลี่ยน
 onValue(ref(db,'stock'), snap=>{
   const fbData=snap.val();
   if(fbData){
+    _lastStock = fbData;
     DATA.forEach(d=>{ if(!isAdmin && fbData[d.barcode]!==undefined) d.qty=fbData[d.barcode]; });
   }
   setSync(true);
   if(!isAdmin){ render(); updateKpi(); buildFilters(); }
 }, ()=>{
   setSync(false);
+});
+
+// ── Realtime: ฟังรายการสินค้า (products) — เห็นรุ่น/สีใหม่ทันทีโดยไม่ต้อง refresh ──
+let _productsFirst = true;
+onValue(ref(db,'products'), snap=>{
+  const products = snap.val();
+  if(!products || Object.keys(products).length===0) return;
+
+  // ครั้งแรก loadFromFirebase() จัดการให้แล้ว ข้ามไปกันทำซ้ำ
+  if(_productsFirst){ _productsFirst = false; return; }
+
+  const byBarcode = {};
+  DATA.forEach(d=>{ byBarcode[d.barcode] = d; });
+
+  let added = 0, updated = 0;
+  Object.keys(products).forEach(bc=>{
+    const p = products[bc];
+    const hex = (p.hex && p.hex.replace('#','')) || guessHexFB(p.color, p.name);
+    const fg  = parseInt(hex,16) > 0x888888 ? '111111' : 'F5F5F5';
+    const cur = byBarcode[bc];
+    if(cur){
+      // อัปเดตข้อมูลสินค้า แต่ "ไม่แตะ qty" (qty มาจาก stock เท่านั้น)
+      if(cur.name!==(p.name||'') || cur.color!==(p.color||'') || cur.set_price!==(p.set_price||0)) updated++;
+      cur.name = p.name || cur.name;
+      cur.model = p.model || p.name || cur.model;
+      cur.color = p.color || '';
+      cur.storage = p.storage || '';
+      cur.set_price = p.set_price || 0;
+      cur.brand = p.brand || '';
+      cur.category = p.category || '';
+      cur.hex = hex; cur.fg = fg;
+    } else {
+      // สินค้าใหม่ → เพิ่มเข้า DATA พร้อม qty จาก stock ล่าสุด
+      DATA.push({
+        barcode: bc,
+        name: p.name || '',
+        model: p.model || p.name || '',
+        color: p.color || '',
+        storage: p.storage || '',
+        qty: _lastStock[bc] !== undefined ? _lastStock[bc] : 0,
+        set_price: p.set_price || 0,
+        brand: p.brand || '',
+        category: p.category || '',
+        hex: hex, fg: fg
+      });
+      added++;
+    }
+  });
+
+  // สินค้าที่ถูกลบออกจาก Firebase → เอาออกจาก DATA ด้วย
+  // (ทำเฉพาะเมื่อ DATA มาจาก Firebase จริง กันเผลอล้างข้อมูลในไฟล์)
+  if(window._dataFromFirebase){
+    for(let i=DATA.length-1; i>=0; i--){
+      if(!products[DATA[i].barcode]) DATA.splice(i,1);
+    }
+  }
+
+  if(added || updated){
+    console.log(`🔄 อัปเดตรายการสินค้า: เพิ่ม ${added} · แก้ ${updated}`);
+    if(!isAdmin && typeof showToast==='function'){
+      showToast(added ? `🔄 มีสินค้าใหม่ ${added} รายการ` : '🔄 อัปเดตข้อมูลสินค้าแล้ว');
+    }
+  }
+  // รีเฟรชหน้าจอ (เฉพาะโหมดดู เพื่อไม่รบกวนตอนกำลังแก้ไข)
+  if(!isAdmin){
+    if(typeof rebuildFilters==='function') rebuildFilters();
+    render(); updateKpi(); buildFilters();
+  }
 });
 
 // ── แสดง "อัปเดตล่าสุด" + ฟัง realtime ──
